@@ -1,0 +1,9 @@
+#pragma once
+
+#define ASYNCIO_VERSION_MAJOR @ASYNCIO_VERSION_MAJOR@
+#define ASYNCIO_VERSION_MINOR @ASYNCIO_VERSION_MINOR@
+
+#define BEGIN_ASYNCIO_NAMESPACE namespace asyncio {
+#define END_ASYNCIO_NAMESPACE } // end namespace
+#define USING_ASYNNCIO_NAMESPACE using namespace asyncio
+
