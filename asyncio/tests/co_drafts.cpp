@@ -81,7 +81,7 @@ struct generator {
   }
   generator(generator &) = delete;
 
-private:
+public:
   generator(handle h) : coro(h) {
     cout << "construct generator: " << (void *)this
          << " coro: " << coro.address() << endl;
@@ -102,4 +102,7 @@ int main() {
   while (g.move_next())
     cout << g.current_value() << endl;
   cout << "after move next. g: " << &g << endl;
+  // g.coro.destroy();
+  // cout << "after destroy manully" << endl;
+  // g.coro = nullptr;
 }
