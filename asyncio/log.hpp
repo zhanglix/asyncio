@@ -5,7 +5,7 @@
 
 static auto _async_io_logger_ = spdlog::get("asyncio")
                                     ? spdlog::get("asyncio")
-                                    : spdlog::stdout_color_mt("asyncio");
+                                    : spdlog::stderr_logger_mt("asyncio");
 
 #define LOG_DEBUG(fmt, ...) _async_io_logger_->debug(fmt, ##__VA_ARGS__)
 #define LOG_INFO(fmt, ...) _async_io_logger_->info(fmt, ##__VA_ARGS__)
