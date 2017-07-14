@@ -1,7 +1,9 @@
 add_executable(
   asyncio_test 
   do_test.cpp
-  coro_test.cpp)
+  coro_test.cpp
+  std_promise_test.cpp
+  )
 #target_link_libraries (asyncio_test  asyncio)
 
 add_executable(

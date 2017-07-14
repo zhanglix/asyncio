@@ -8,10 +8,12 @@
 
 BEGIN_ASYNCIO_NAMESPACE;
 
-template <typename ReturnType> struct coro {
+template <typename ReturnType> class coro {
+public:
   using handle_base = std::experimental::coroutine_handle<>;
 
-  struct promise_type : public promise<ReturnType> {
+  class promise_type : public promise<ReturnType> {
+  public:
     promise_type() { LOG_DEBUG("Constructing promise: 0x{:x}", (long)this); }
     ~promise_type() { LOG_DEBUG("Destructing promise: 0x{:x}", (long)this); }
 
@@ -67,8 +69,9 @@ template <typename ReturnType> struct coro {
   coro(coro &&other) : _handle(other._handle) {
     LOG_DEBUG("Move Constructing coro. this: 0x{:x}, handle: 0x{:x}",
               (long)this, (long)_handle.address());
-    other._handle = nullptr;
+    other._handle = std::experimental::coroutine_handle<promise_type>();
   }
+  coro() {}
   ~coro() {
     LOG_DEBUG("Destructing coro. this: 0x{:x}, handle: 0x{:x}", (long)this,
               (long)_handle.address());
@@ -80,11 +83,51 @@ template <typename ReturnType> struct coro {
               (long)other._handle.address());
     destroy_handle();
     _handle = other._handle;
-    other._handle = nullptr;
+    other._handle = std::experimental::coroutine_handle<promise_type>();
     return *this;
   }
 
 private:
   std::experimental::coroutine_handle<promise_type> _handle;
 };
+
+template <typename ReturnType> class co_runner {
+public:
+  co_runner(coro<ReturnType> &co) : _runner(run(co)) {
+    _runner.await_suspend(nullptr);
+  }
+  co_runner(coro<ReturnType> &&co) : _runner(run(co)) {
+    _runner.await_suspend(nullptr);
+  }
+  co_runner(co_runner &) = delete;
+  co_runner(co_runner &&) = delete;
+  std::future<ReturnType> get_future() { return std::move(_future); }
+
+private:
+  coro<void> _runner;
+  std::future<ReturnType> _future;
+
+  coro<void> run(coro<ReturnType> &co) {
+    std::promise<ReturnType> promise;
+    this->_future = promise.get_future();
+    try {
+      ReturnType ret = co_await std::move(co);
+      promise.set_value(ret);
+    } catch (...) {
+      promise.set_exception(std::current_exception());
+    }
+  }
+};
+
+template <> coro<void> co_runner<void>::run(coro<void> &co) {
+  std::promise<void> promise;
+  this->_future = promise.get_future();
+  try {
+    co_await std::move(co);
+    promise.set_value();
+  } catch (...) {
+    promise.set_exception(std::current_exception());
+  }
+}
+
 END_ASYNCIO_NAMESPACE;

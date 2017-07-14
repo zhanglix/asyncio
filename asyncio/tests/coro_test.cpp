@@ -22,12 +22,19 @@ coro<int> foo() {
   co_return 10;
 }
 
-TEST_CASE("coro_direct_return", "[no_suspening]") {
+TEST_CASE("coro_direct_return", "[no_suspening][foo]") {
   auto &&co = foo();
-  CHECK_FALSE(co.await_ready());
-  CHECK_FALSE(co.await_resume() == 10);
-  CHECK_FALSE(co.await_suspend(nullptr));
-  CHECK(co.await_resume() == 10);
+  SECTION("co_runner") {
+    co_runner<int> cr(co);
+    auto &&future = cr.get_future();
+    CHECK(future.get() == 10);
+  }
+  SECTION("decomposed") {
+    CHECK_FALSE(co.await_ready());
+    CHECK_FALSE(co.await_resume() == 10);
+    CHECK_FALSE(co.await_suspend(nullptr));
+    CHECK(co.await_resume() == 10);
+  }
 }
 
 template <typename T> coro<T> goo(handle_leak<T> *leak) {
@@ -44,6 +51,18 @@ template <> coro<void> goo(handle_leak<void> *leak) {
 template <typename T> coro<T> hoo(handle_leak<T> *leak) {
   LOG_DEBUG("in hoo with leak({})", leak->name);
   co_return co_await goo(leak);
+}
+
+TEST_CASE("co_runner suspended", "[suspended]") {
+  LOG_DEBUG("coro_suspended test started");
+  handle_leak<int> leak(11);
+  coro<int> co(nullptr);
+  SECTION("goo") { co = goo<int>(&leak); }
+  SECTION("hoo") { co = hoo<int>(&leak); }
+  co_runner<int> cr(co);
+  auto &&future = cr.get_future();
+  leak.resume_caller();
+  CHECK(future.get() == leak.value);
 }
 
 TEST_CASE("coro_suspended", "[suspended]") {
@@ -79,9 +98,15 @@ coro<void> voo() {
 
 TEST_CASE("coro_void", "[void][no_suspening]") {
   LOG_DEBUG("coro_void test started");
-  auto &&co = voo();
-  CHECK_FALSE(co.await_ready());
-  CHECK_FALSE(co.await_suspend(nullptr));
+  SECTION("decomposed") {
+    auto &&co = voo();
+    CHECK_FALSE(co.await_ready());
+    CHECK_FALSE(co.await_suspend(nullptr));
+  }
+  SECTION("co_runner") {
+    co_runner<void> cr(voo());
+    cr.get_future().get();
+  }
 }
 
 TEST_CASE("coro_void_suspended", "[void][suspended]") {
