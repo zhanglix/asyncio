@@ -1,44 +1,14 @@
 #pragma once
+#include <asyncio/config.hpp>
 
 #include <experimental/coroutine>
 
 #include "log.hpp"
 #include "promise.hpp"
-#include <asyncio/config.hpp>
 
 BEGIN_ASYNCIO_NAMESPACE;
 
-template <typename ReturnType> struct coro;
-
-// template <typename ReturnType> struct promise_typed_base : public
-// promise_base {
-//   static coro<ReturnType> get_return_object_on_allocation_failure();
-// };
-
-template <typename ReturnType> struct promise : public promise_base {
-  void return_value(ReturnType value) {
-    current_value = value;
-    this->set_done();
-    LOG_DEBUG("return_value(). promise this: 0x{:x}", (long)this);
-  }
-  ReturnType get_current_value() {
-    this->check_exception();
-    return current_value;
-  }
-  ReturnType current_value;
-};
-
-template <> struct promise<void> : public promise_base {
-  //  coro<void> get_return_object() ;
-  void return_void() {
-    this->set_done();
-    LOG_DEBUG("return_void(). promise this: 0x{:x}", (long)this);
-  }
-  void get_current_value() { this->check_exception(); }
-};
-
 template <typename ReturnType> struct coro {
-  //  using handle = std::experimental::coroutine_handle<promise_type>;
   using handle_base = std::experimental::coroutine_handle<>;
 
   struct promise_type : public promise<ReturnType> {
@@ -58,10 +28,10 @@ template <typename ReturnType> struct coro {
   bool await_ready() const noexcept {
     LOG_DEBUG("await_ready. coro this: 0x{:x}, handle: 0x{:x}", (long)this,
               (long)_handle.address());
-    return false;
+    return _handle.promise().ready();
   }
-  bool await_suspend(handle_base caller_handle) {
 
+  bool await_suspend(handle_base caller_handle) {
     LOG_DEBUG("await_suspend. coro this: 0x{:x}, "
               "handle: 0x{:x} caller_handle: 0x{:x}",
               (long)this, (long)_handle.address(),
@@ -74,6 +44,7 @@ template <typename ReturnType> struct coro {
       return false;
     }
   }
+
   ReturnType await_resume() const {
     LOG_DEBUG("await_resume. coro this: 0x{:x}, handle: 0x{:x}", (long)this,
               (long)_handle.address());

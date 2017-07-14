@@ -26,6 +26,7 @@ struct promise_base {
               (long)this, (long)h.address());
     caller_handle = h;
   }
+  bool ready() { return done; }
 
   bool need_suspend() {
     check_exception();
@@ -58,6 +59,27 @@ protected:
   bool done;
 };
 
+template <typename ReturnType> struct promise : public promise_base {
+  void return_value(ReturnType value) {
+    current_value = value;
+    this->set_done();
+    LOG_DEBUG("return_value(). promise this: 0x{:x}", (long)this);
+  }
+  ReturnType get_current_value() {
+    this->check_exception();
+    return current_value;
+  }
+  ReturnType current_value;
+};
+
+template <> struct promise<void> : public promise_base {
+  void return_void() {
+    this->set_done();
+    LOG_DEBUG("return_void(). promise this: 0x{:x}", (long)this);
+  }
+  void get_current_value() { this->check_exception(); }
+};
+
 struct done_suspend {
   done_suspend(promise_base *p) : promise(p) {
     LOG_DEBUG("constructing done_suspend. this: 0x{:x}, promise: 0x{:x}",
@@ -81,7 +103,7 @@ void done_suspend::await_suspend(std::experimental::coroutine_handle<>) const
             "this: 0x{:x}, promise: 0x{:x}",
             (long)this, (long)promise);
   promise->resume_caller();
-  //  LOG_DEBUG("caller resumed. this: 0x{:x}", (long)this);
+  LOG_DEBUG("caller resumed. this: 0x{:x}", (long)this);
 }
 
 END_ASYNCIO_NAMESPACE;
