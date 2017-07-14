@@ -123,7 +123,8 @@ template <> coro<void> co_runner<void>::run(coro<void> &co) {
   std::promise<void> promise;
   this->_future = promise.get_future();
   try {
-    co_await std::move(co);
+    coro<void> co_holder = std::move(co);
+    co_await co_holder;
     promise.set_value();
   } catch (...) {
     promise.set_exception(std::current_exception());

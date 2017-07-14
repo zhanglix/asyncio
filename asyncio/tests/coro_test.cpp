@@ -112,9 +112,16 @@ TEST_CASE("coro_void", "[void][no_suspening]") {
 TEST_CASE("coro_void_suspended", "[void][suspended]") {
   LOG_DEBUG("coro_void_suspended test started");
   handle_leak<void> leak;
-  auto &&co = goo(&leak);
-  CHECK_FALSE(co.await_ready());
-  CHECK(co.await_suspend(nullptr));
+  SECTION("decomposed") {
+    auto &&co = goo(&leak);
+    CHECK_FALSE(co.await_ready());
+    CHECK(co.await_suspend(nullptr));
+  }
+  SECTION("co_runner") {
+    co_runner<void> cr(goo(&leak));
+    leak.resume_caller();
+    cr.get_future().get();
+  }
 }
 
 template <typename T>
@@ -205,6 +212,10 @@ TEST_CASE("exception_raised", "[exception]") {
       co_return;
     };
   }
+
+  co_runner<void> cr(will_raise(&leak));
+  leak.resume_caller();
+  CHECK_THROWS_AS(cr.get_future().get(), runtime_error);
 
   auto &&caller = [&](handle_leak<void> *leak) -> coro<string> {
     string ret;
