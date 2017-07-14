@@ -4,13 +4,15 @@ project (asyncio)
 set(CMAKE_MODULE_PATH 
   ${CMAKE_MODULE_PATH} 
   "${CMAKE_SOURCE_DIR}/cmake.modules/"
-  "/usr/local/opt/llvm/lib/cmake/llvm/"
-  "/usr/local/opt/llvm/lib/cmake/clang/"
 ) 
 
 find_package(LLVM REQUIRED CONFIG)
-set (CMAKE_C_COMPILER /usr/local/opt/llvm/bin/clang)
-set (CMAKE_CXX_COMPILER /usr/local/opt/llvm/bin/clang++)
+
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+
+set (CMAKE_C_COMPILER ${LLVM_TOOLS_BINARY_DIR}/clang)
+set (CMAKE_CXX_COMPILER ${LLVM_TOOLS_BINARY_DIR}/clang++)
 
 # The version number.
 set (ASYNCIO_VERSION_MAJOR 0)
@@ -28,18 +30,20 @@ add_compile_options(
   -fcoroutines-ts
   -v)
 
-SET( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -v -Wl,-rpath,/usr/local/opt/llvm/lib" )
-
+#SET( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -v -Wl,-rpath,/usr/local/opt/llvm/lib" )
+SET( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -v -Wl -Werror" )
 include_directories(
   "${PROJECT_BINARY_DIR}" 
   "${PROJECT_SOURCE_DIR}"
   "${PROJECT_SOURCE_DIR}/contrib/tests"  
-  "/usr/local/opt/llvm/include"
+  ${LLVM_INCLUDE_DIRS}
 )
+
 link_directories(
-  "/usr/local/opt/llvm/lib"
+${LLVM_LIBRARY_DIRS}
 )
-set (EXTRA_LIBS -lpthread -luv)
+
+set (EXTRA_LIBS -lpthread)
 enable_testing(true)
 include(ParseAndAddCatchTests)  
 set(AdditionalCatchParameters ${AdditionalCatchParameters} --rng-seed time)
