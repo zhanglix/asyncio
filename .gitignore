@@ -1,6 +1,7 @@
 build
 *.sublime-workspace
 .vscode
+.*
 
 ###C++###
 
