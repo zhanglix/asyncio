@@ -54,7 +54,7 @@ template <typename T> coro<T> hoo(handle_leak<T> *leak) {
 }
 
 TEST_CASE("co_runner suspended", "[suspended]") {
-  LOG_DEBUG("coro_suspended test started");
+  LOG_DEBUG("co_runner suspended test started");
   handle_leak<int> leak(11);
   coro<int> co(nullptr);
   SECTION("goo") { co = goo<int>(&leak); }
@@ -69,9 +69,16 @@ TEST_CASE("coro_suspended", "[suspended]") {
   LOG_DEBUG("coro_suspended test started");
   handle_leak<int> leak(11);
   coro<int> co(nullptr);
-  SECTION("goo") { co = goo<int>(&leak); }
-  SECTION("hoo") { co = hoo<int>(&leak); }
+  SECTION("goo") {
+    LOG_DEBUG("section goo");
+    co = goo<int>(&leak);
+  }
+  SECTION("hoo") {
+    LOG_DEBUG("hoo");
+    co = hoo<int>(&leak);
+  }
   LOG_DEBUG("coro created!");
+  REQUIRE(co);
   CHECK_FALSE(leak.handle);
   CHECK_FALSE(co.await_ready());
   CHECK_FALSE(co.await_resume() == leak.value);
@@ -89,6 +96,7 @@ TEST_CASE("coro_suspended", "[suspended]") {
             (long)leak.handle.address());
 
   CHECK(co.await_resume() == leak.value);
+  LOG_DEBUG("finished await_resume()");
 }
 
 coro<void> voo() {

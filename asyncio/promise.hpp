@@ -18,7 +18,7 @@ struct promise_base {
     LOG_DEBUG("create initial_suspend(). promise this: 0x{:x}", (long)this);
     return suspend_always{};
   }
-  done_suspend final_suspend();
+  inline done_suspend final_suspend();
   void unhandled_exception() { exception_caught = std::current_exception(); }
 
   void set_caller_handle(coroutine_handle &h) {
@@ -86,24 +86,27 @@ struct done_suspend {
               (long)this, (long)p);
   }
   bool await_ready() const noexcept { return false; }
-  void await_suspend(std::experimental::coroutine_handle<>) const noexcept;
+  inline void await_suspend(std::experimental::coroutine_handle<>) const
+      noexcept;
   void await_resume() const noexcept {}
   promise_base *promise;
 };
 
 // imlementations following ...
-done_suspend promise_base::final_suspend() {
+inline done_suspend promise_base::final_suspend() {
   LOG_DEBUG("create final_suspend(). promise this: 0x{:x}", (long)this);
   return done_suspend(this);
 }
 
-void done_suspend::await_suspend(std::experimental::coroutine_handle<>) const
+inline void
+done_suspend::await_suspend(std::experimental::coroutine_handle<>) const
     noexcept {
   LOG_DEBUG("Done! will resume_caller()."
             "this: 0x{:x}, promise: 0x{:x}",
             (long)this, (long)promise);
   promise->resume_caller();
-  LOG_DEBUG("caller resumed. this: 0x{:x}", (long)this);
+  // this line may trigger access invalid address
+  //  LOG_DEBUG("caller resumed. this: 0x{:x}", (long)this);
 }
 
 END_ASYNCIO_NAMESPACE;

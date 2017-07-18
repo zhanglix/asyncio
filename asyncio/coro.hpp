@@ -2,6 +2,7 @@
 #include <asyncio/config.hpp>
 
 #include <experimental/coroutine>
+#include <future>
 
 #include "log.hpp"
 #include "promise.hpp"
@@ -26,6 +27,8 @@ public:
       return coro<ReturnType>(nullptr);
     }
   };
+
+  operator bool() const { return bool(_handle); }
 
   bool await_ready() const noexcept {
     LOG_DEBUG("await_ready. coro this: 0x{:x}, handle: 0x{:x}", (long)this,
@@ -119,7 +122,7 @@ private:
   }
 };
 
-template <> coro<void> co_runner<void>::run(coro<void> &co) {
+template <> coro<void> inline co_runner<void>::run(coro<void> &co) {
   std::promise<void> promise;
   this->_future = promise.get_future();
   try {
