@@ -10,10 +10,10 @@ BEGIN_ASYNCIO_NAMESPACE;
 struct done_suspend;
 struct promise_base {
   using coroutine_handle = std::experimental::coroutine_handle<>;
-  using suspend_always = std::experimental::suspend_always;
 
   promise_base() : done(false) {}
 
+  using suspend_always = std::experimental::suspend_always;
   suspend_always initial_suspend() {
     LOG_DEBUG("create initial_suspend(). promise this: 0x{:x}", (long)this);
     return suspend_always{};
@@ -61,15 +61,15 @@ protected:
 
 template <typename ReturnType> struct promise : public promise_base {
   void return_value(ReturnType value) {
-    current_value = value;
+    _return_value = value;
     this->set_done();
     LOG_DEBUG("return_value(). promise this: 0x{:x}", (long)this);
   }
-  ReturnType get_current_value() {
+  ReturnType get_return_value() {
     this->check_exception();
-    return current_value;
+    return _return_value;
   }
-  ReturnType current_value;
+  ReturnType _return_value;
 };
 
 template <> struct promise<void> : public promise_base {
@@ -77,7 +77,7 @@ template <> struct promise<void> : public promise_base {
     this->set_done();
     LOG_DEBUG("return_void(). promise this: 0x{:x}", (long)this);
   }
-  void get_current_value() { this->check_exception(); }
+  void get_return_value() { this->check_exception(); }
 };
 
 struct done_suspend {

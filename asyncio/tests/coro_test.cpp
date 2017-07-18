@@ -17,6 +17,7 @@ using namespace std::experimental;
 using namespace asyncio;
 using namespace std;
 
+namespace coro_test {
 coro<int> foo() {
   LOG_DEBUG("in foo will return 10");
   co_return 10;
@@ -240,4 +241,5 @@ TEST_CASE("exception_raised", "[exception]") {
   co.await_suspend(nullptr);
   leak.resume_caller();
   CHECK(co.await_resume() == exception_message);
+}
 }

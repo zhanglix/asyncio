@@ -53,7 +53,7 @@ public:
   ReturnType await_resume() const {
     LOG_DEBUG("await_resume. coro this: 0x{:x}, handle: 0x{:x}", (long)this,
               (long)_handle.address());
-    return _handle.promise().get_current_value();
+    return _handle.promise().get_return_value();
   }
 
   void destroy_handle() {
