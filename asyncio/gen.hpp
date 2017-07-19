@@ -1,5 +1,6 @@
 #include <experimental/coroutine>
 #include <future>
+#include <type_traits>
 
 #include "log.hpp"
 #include "promise.hpp"
@@ -13,7 +14,7 @@ public:
   class promise_type : public promise<void> {
   public:
     using suspend_never = std::experimental::suspend_never;
-
+    struct yield_suspend : public suspend_always {};
     promise_type() : _current_ready(false) {
       LOG_DEBUG("Constructing promise: 0x{:x}", (long)this);
     }
@@ -34,7 +35,7 @@ public:
     auto yield_value(ValueType value) {
       _current_ready = true;
       _current_value = value;
-      return suspend_always{};
+      return yield_suspend{};
     }
 
     auto get_current_value() const { return _current_value; }
@@ -44,6 +45,12 @@ public:
     }
     void clear_current() { _current_ready = false; }
     bool has_current() { return _current_ready; }
+
+    template <typename AnyType> inline AnyType await_transform(AnyType any) {
+      static_assert(
+          std::is_same<yield_suspend, AnyType>::value,
+          "operator 'co_await' is not allowed in a gen<ValueType> coroutine!");
+    }
 
   private:
     ValueType _current_value;

@@ -7,8 +7,9 @@
 
 BEGIN_ASYNCIO_NAMESPACE;
 
-struct done_suspend;
-struct promise_base {
+class done_suspend;
+class promise_base {
+public:
   using coroutine_handle = std::experimental::coroutine_handle<>;
 
   promise_base() : done(false) {}
@@ -59,7 +60,8 @@ protected:
   bool done;
 };
 
-template <typename ReturnType> struct promise : public promise_base {
+template <typename ReturnType> class promise : public promise_base {
+public:
   void return_value(ReturnType value) {
     _return_value = value;
     this->set_done();
@@ -72,7 +74,8 @@ template <typename ReturnType> struct promise : public promise_base {
   ReturnType _return_value;
 };
 
-template <> struct promise<void> : public promise_base {
+template <> class promise<void> : public promise_base {
+public:
   void return_void() {
     this->set_done();
     LOG_DEBUG("return_void(). promise this: 0x{:x}", (long)this);
@@ -80,7 +83,8 @@ template <> struct promise<void> : public promise_base {
   void get_return_value() { this->check_exception(); }
 };
 
-struct done_suspend {
+class done_suspend {
+public:
   done_suspend(promise_base *p) : promise(p) {
     LOG_DEBUG("constructing done_suspend. this: 0x{:x}, promise: 0x{:x}",
               (long)this, (long)p);
