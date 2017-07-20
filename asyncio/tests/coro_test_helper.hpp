@@ -19,7 +19,9 @@ struct leak_base {
   void resume_caller() {
     LOG_DEBUG("leak({}) resuming handle: 0x{:x} ...", this->name,
               this->address);
-    this->handle.resume();
+    if (this->handle) {
+      this->handle.resume();
+    }
     LOG_DEBUG("leak({}) resuming handle: 0x{:x} DONE!", this->name,
               this->address);
   }
