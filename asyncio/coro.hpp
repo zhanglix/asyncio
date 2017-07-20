@@ -19,6 +19,7 @@ public:
     ~promise_type() { LOG_DEBUG("Destructing promise: 0x{:x}", (long)this); }
 
     auto get_return_object() {
+      LOG_DEBUG("get_return_object: promise: 0x{:x}", (long)this);
       return coro<ReturnType>(
           std::experimental::coroutine_handle<promise_type>::from_promise(
               *this));

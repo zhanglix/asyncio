@@ -5,6 +5,7 @@ add_executable(
   std_promise_test.cpp
   co_utility_test.cpp
   gen_test.cpp
+  co_gen_test.cpp
   )
 #target_link_libraries (asyncio_test  asyncio)
 

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <experimental/coroutine>
 #include <future>
 #include <type_traits>

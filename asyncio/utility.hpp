@@ -1,4 +1,5 @@
 #pragma once
+
 #include <experimental/coroutine>
 
 BEGIN_ASYNCIO_NAMESPACE;
@@ -13,6 +14,10 @@ public:
       _caller = caller;
     }
     return !_ready;
+  }
+  void clear() {
+    _ready = false;
+    _caller = nullptr;
   }
 
 protected:
