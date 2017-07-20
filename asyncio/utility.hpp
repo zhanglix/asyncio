@@ -57,10 +57,6 @@ public:
     }
     return !_ready;
   }
-  void clear() {
-    _ready = false;
-    _caller = nullptr;
-  }
 
 protected:
   // void await_resume() const noexcept {}
