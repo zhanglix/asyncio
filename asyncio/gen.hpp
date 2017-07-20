@@ -13,70 +13,31 @@ template <typename ValueType> class gen {
 public:
   using handle_base = std::experimental::coroutine_handle<>;
 
-  class promise_type : public promise<void> {
+  class promise_type : public yield_promise<ValueType> {
   public:
-    using suspend_never = std::experimental::suspend_never;
-    struct yield_suspend : public suspend_always {};
-    promise_type() : _current_ready(false) {
-      LOG_DEBUG("Constructing promise: 0x{:x}", (long)this);
-    }
-    ~promise_type() { LOG_DEBUG("Destructing promise: 0x{:x}", (long)this); }
-
     auto get_return_object() {
       return gen<ValueType>(
           std::experimental::coroutine_handle<promise_type>::from_promise(
               *this));
     }
 
-    auto yield_value(ValueType value) {
-      _current_ready = true;
-      _current_value = value;
-      return yield_suspend{};
-    }
-
-    auto get_current_value() const { return _current_value; }
-
     static auto get_return_object_on_allocation_failure() {
       return gen<ValueType>(nullptr);
     }
-    void clear_current() { _current_ready = false; }
-    bool has_current() { return _current_ready; }
-
-    template <typename AnyType> inline AnyType await_transform(AnyType any) {
-      static_assert(
-          std::is_same<yield_suspend, AnyType>::value,
-          "operator 'co_await' is not allowed in a gen<ValueType> coroutine!");
-    }
-
-  private:
-    ValueType _current_value;
-    bool _current_ready;
   };
 
   using handle_type = std::experimental::coroutine_handle<promise_type>;
 
-  class iterator {
+  class iterator : public yield_iterator<ValueType, promise_type> {
   public:
-    iterator(handle_type handle = nullptr) : _handle(handle) {}
-    bool operator!=(const iterator &other) const {
-      return _handle != other._handle;
-    }
-
-    auto operator*() const { return _handle.promise().get_current_value(); }
+    iterator(handle_type handle = nullptr)
+        : yield_iterator<ValueType, promise_type>(handle) {}
 
     void operator++() {
-      promise_type &promise = _handle.promise();
-      promise.clear_current();
-      _handle.resume();
-      promise.check_exception();
-      if (!promise.has_current()) {
-        LOG_DEBUG("has no current value. set this iterator to end state");
-        _handle = nullptr;
+      if (this->next()) {
+        this->_value = this->_handle.promise().get_yield_value();
       }
     }
-
-  private:
-    handle_type _handle;
   };
 
   iterator begin() const {
@@ -88,7 +49,7 @@ public:
 
   operator bool() const { return bool(_handle); }
 
-  gen(std::experimental::coroutine_handle<promise_type> h) : _handle(h) {
+  gen(handle_type h) : _handle(h) {
     LOG_DEBUG("Constructing gen. this: 0x{:x} handle: 0x{:x}", (long)this,
               (long)h.address());
   }

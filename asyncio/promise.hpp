@@ -16,15 +16,15 @@ public:
 
   using suspend_always = std::experimental::suspend_always;
   suspend_always initial_suspend() {
-    LOG_DEBUG("create initial_suspend(). promise this: 0x{:x}", (long)this);
+    LOG_DEBUG("create initial_suspend(). promise this: {}", (void *)this);
     return suspend_always{};
   }
   inline done_suspend final_suspend();
   void unhandled_exception() { exception_caught = std::current_exception(); }
 
   void set_caller_handle(coroutine_handle &h) {
-    LOG_DEBUG("set_caller_handle. promise this: 0x{:x} handle: 0x{:x}",
-              (long)this, (long)h.address());
+    LOG_DEBUG("set_caller_handle. promise this: {} handle: {}", (void *)this,
+              h.address());
     caller_handle = h;
   }
   bool ready() { return done; }
@@ -41,18 +41,20 @@ public:
 
   void resume_caller() {
     if (caller_handle) {
-      LOG_DEBUG("resume caller. promise this: 0x{:x}, caller_handle: 0x{:x}",
-                (long)this, (long)caller_handle.address());
+      LOG_DEBUG("resume caller. promise this: {}, caller_handle: {}",
+                (void *)this, caller_handle.address());
       caller_handle.resume();
     }
   }
 
   void set_done() {
-    LOG_DEBUG("promise done. this: 0x{:x}", long(this));
+    LOG_DEBUG("promise done. this: {}", (void *)this);
     done = true;
   }
 
-  ~promise_base() { LOG_DEBUG("Destructing promise_base: {0:x}", long(this)); }
+  ~promise_base() {
+    LOG_DEBUG("Destructing promise_base: {0:x}", (void *)this);
+  }
 
 protected:
   coroutine_handle caller_handle;
@@ -65,7 +67,7 @@ public:
   void return_value(ReturnType value) {
     _return_value = value;
     this->set_done();
-    LOG_DEBUG("return_value(). promise this: 0x{:x}", (long)this);
+    LOG_DEBUG("return_value(). promise this: {}", (void *)this);
   }
   ReturnType get_return_value() {
     this->check_exception();
@@ -78,7 +80,7 @@ template <> class promise<void> : public promise_base {
 public:
   void return_void() {
     this->set_done();
-    LOG_DEBUG("return_void(). promise this: 0x{:x}", (long)this);
+    LOG_DEBUG("return_void(). promise this: {}", (void *)this);
   }
   void get_return_value() { this->check_exception(); }
 };
@@ -88,11 +90,9 @@ public:
   using suspend_never = std::experimental::suspend_never;
   struct yield_suspend : public suspend_always {};
   yield_promise() : _yielded(false) {
-    LOG_DEBUG("Constructing yield_promise: 0x{:x}", (long)this);
+    LOG_DEBUG("Constructing yield_promise: {}", (void *)this);
   }
-  ~yield_promise() {
-    LOG_DEBUG("Destructing yield_promise: 0x{:x}", (long)this);
-  }
+  ~yield_promise() { LOG_DEBUG("Destructing yield_promise: {}", (void *)this); }
 
   auto yield_value(YiledType &&value) { return yield_value(value); }
   auto yield_value(YiledType &value) {
@@ -130,7 +130,7 @@ public:
   }
   auto operator*() const { return std::move(_value); }
   bool next() {
-    LOG_DEBUG("next. this: 0x{:x}, handle: {}", (long)this, _handle.address());
+    LOG_DEBUG("next. this: {}, handle: {}", (void *)this, _handle.address());
     PromiseType &promise = _handle.promise();
     _handle.resume(); // assert there is no co_await in co_gen<> coroutines.
     if (!promise.yielded()) {
@@ -148,8 +148,8 @@ protected:
 class done_suspend {
 public:
   done_suspend(promise_base *p) : promise(p) {
-    LOG_DEBUG("constructing done_suspend. this: 0x{:x}, promise: 0x{:x}",
-              (long)this, (long)p);
+    LOG_DEBUG("constructing done_suspend. this: {}, promise: {}", (void *)this,
+              (void *)p);
   }
   bool await_ready() const noexcept { return false; }
   inline void await_suspend(std::experimental::coroutine_handle<>) const
@@ -160,7 +160,7 @@ public:
 
 // imlementations following ...
 inline done_suspend promise_base::final_suspend() {
-  LOG_DEBUG("create final_suspend(). promise this: 0x{:x}", (long)this);
+  LOG_DEBUG("create final_suspend(). promise this: {}", (void *)this);
   return done_suspend(this);
 }
 
@@ -168,11 +168,11 @@ inline void
 done_suspend::await_suspend(std::experimental::coroutine_handle<>) const
     noexcept {
   LOG_DEBUG("Done! will resume_caller()."
-            "this: 0x{:x}, promise: 0x{:x}",
-            (long)this, (long)promise);
+            "this: {}, promise: {}",
+            (void *)this, (void *)promise);
   promise->resume_caller();
   // this line may trigger access invalid address
-  //  LOG_DEBUG("caller resumed. this: 0x{:x}", (long)this);
+  //  LOG_DEBUG("caller resumed. this: {}", (void*)this);
 }
 
 END_ASYNCIO_NAMESPACE;

@@ -112,5 +112,6 @@ TEST_CASE("co_gen<int> exception thrown wait") {
 // @todo move the following two lines in a separate test framework to make
 // sure it will call the comiler to generate compiling error!
 // coro<int> foo(int n) { co_return n; }
-// gen<int> will_generate_compiling_error(int n) { co_yield co_await foo(n); }
+// co_gen<int> will_generate_compiling_error(int n) { co_yield co_await foo(n);
+// }
 } // namespace co_gen_test

@@ -4,6 +4,46 @@
 
 BEGIN_ASYNCIO_NAMESPACE;
 
+template <typename ReturnType> class co_runner {
+public:
+  co_runner(coro<ReturnType> &co) : _runner(run(co)) {
+    _runner.await_suspend(nullptr);
+  }
+  co_runner(coro<ReturnType> &&co) : _runner(run(co)) {
+    _runner.await_suspend(nullptr);
+  }
+  co_runner(co_runner &) = delete;
+  co_runner(co_runner &&) = delete;
+  std::future<ReturnType> get_future() { return std::move(_future); }
+
+private:
+  coro<void> _runner;
+  std::future<ReturnType> _future;
+
+  coro<void> run(coro<ReturnType> &co) {
+    std::promise<ReturnType> promise;
+    this->_future = promise.get_future();
+    try {
+      ReturnType ret = co_await std::move(co);
+      promise.set_value(ret);
+    } catch (...) {
+      promise.set_exception(std::current_exception());
+    }
+  }
+};
+
+template <> coro<void> inline co_runner<void>::run(coro<void> &co) {
+  std::promise<void> promise;
+  this->_future = promise.get_future();
+  try {
+    coro<void> co_holder = std::move(co);
+    co_await co_holder;
+    promise.set_value();
+  } catch (...) {
+    promise.set_exception(std::current_exception());
+  }
+}
+
 class AWaitableBase {
 public:
   AWaitableBase() : _ready(false), _caller(nullptr) {}

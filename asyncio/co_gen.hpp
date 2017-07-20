@@ -52,7 +52,7 @@ public:
 
   operator bool() const { return bool(_handle); }
 
-  co_gen(std::experimental::coroutine_handle<promise_type> h) : _handle(h) {
+  co_gen(handle_type h) : _handle(h) {
     LOG_DEBUG("Constructing co_gen. this: () handle: ()", (void *)this,
               h.address());
   }
@@ -60,7 +60,7 @@ public:
   co_gen(co_gen &&other) : _handle(other._handle) {
     LOG_DEBUG("Move Constructing co_gen. this: (), handle: ()", (void *)this,
               _handle.address());
-    other._handle = std::experimental::coroutine_handle<promise_type>();
+    other._handle = nullptr;
   }
   co_gen() : _handle(nullptr) {}
   void destroy_handle() {

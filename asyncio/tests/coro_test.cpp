@@ -4,12 +4,13 @@
 #include <future>
 #include <stdint.h>
 #include <utility>
+#include <experimental/coroutine>
 
 #define ENABLE_ASYNCIO_LOG
 #include <asyncio/log.hpp>
 
 #include <asyncio/coro.hpp>
-#include <experimental/coroutine>
+#include <asyncio/utility.hpp>
 
 #include "coro_test_helper.hpp"
 
