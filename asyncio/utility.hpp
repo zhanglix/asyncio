@@ -77,8 +77,13 @@ protected:
 
 template <typename T> class AWaitable : public AWaitableBase {
 public:
-  T await_resume() const noexcept { return _value; }
-  void resume(T value) {
+  T await_resume() const noexcept { return std::move(_value); }
+  void resume(T &&value) {
+    _value = std::move(value);
+    this->setReady();
+    this->resumeCaller();
+  }
+  void resume(T &value) {
     _value = value;
     this->setReady();
     this->resumeCaller();
