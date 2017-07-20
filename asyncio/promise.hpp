@@ -83,6 +83,68 @@ public:
   void get_return_value() { this->check_exception(); }
 };
 
+template <typename YiledType> class yield_promise : public promise<void> {
+public:
+  using suspend_never = std::experimental::suspend_never;
+  struct yield_suspend : public suspend_always {};
+  yield_promise() : _yielded(false) {
+    LOG_DEBUG("Constructing yield_promise: 0x{:x}", (long)this);
+  }
+  ~yield_promise() {
+    LOG_DEBUG("Destructing yield_promise: 0x{:x}", (long)this);
+  }
+
+  auto yield_value(YiledType &&value) { return yield_value(value); }
+  auto yield_value(YiledType &value) {
+    _yielded = true;
+    _yield_value = std::move(value);
+    return yield_suspend{};
+  }
+
+  auto get_yield_value() {
+    this->check_exception();
+    this->clear_yielded();
+    return std::move(_yield_value);
+  }
+
+  void clear_yielded() { _yielded = false; }
+  bool yielded() { return _yielded; }
+
+  template <typename AnyType> inline AnyType await_transform(AnyType any) {
+    static_assert(std::is_same<yield_suspend, AnyType>::value,
+                  "operator 'co_await' is not allowed in a "
+                  "coroutine with yield_promise<YieldType> !");
+  }
+
+private:
+  YiledType _yield_value;
+  bool _yielded;
+};
+
+template <typename ValueType, typename PromiseType> class yield_iterator {
+public:
+  using coroutine_handle = std::experimental::coroutine_handle<PromiseType>;
+  yield_iterator(coroutine_handle handle) : _handle(handle) {}
+  bool operator!=(const yield_iterator &other) const {
+    return _handle != other._handle;
+  }
+  auto operator*() const { return std::move(_value); }
+  bool next() {
+    LOG_DEBUG("next. this: 0x{:x}, handle: {}", (long)this, _handle.address());
+    PromiseType &promise = _handle.promise();
+    _handle.resume(); // assert there is no co_await in co_gen<> coroutines.
+    if (!promise.yielded()) {
+      promise.check_exception();
+      _handle = nullptr;
+    }
+    return promise.yielded();
+  }
+
+protected:
+  coroutine_handle _handle;
+  ValueType _value;
+};
+
 class done_suspend {
 public:
   done_suspend(promise_base *p) : promise(p) {
