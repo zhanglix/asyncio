@@ -4,6 +4,7 @@
 
 #define ENABLE_ASYNCIO_LOG
 #include <asyncio/log.hpp>
+#include <vector>
 
 #include <asyncio/co_gen.hpp>
 #include <asyncio/coro.hpp>
@@ -14,14 +15,14 @@ using namespace asyncio;
 
 namespace co_gen_test {
 
-static AWaitable<int> awaitable;
+static vector<AWaitable<int>> awaitables;
 coro<int> identity_no_suspend(int n) {
   LOG_DEBUG("identity_no_suspend{}", n);
   co_return n;
 }
-coro<int> awaitable_suspended() {
+coro<int> awaitable_suspended(int i) {
   LOG_DEBUG("awaitable_suspended");
-  co_return co_await awaitable;
+  co_return co_await awaitables[i];
 }
 
 co_gen<int> range(int n, bool wait, int throwPos = -1) {
@@ -29,7 +30,7 @@ co_gen<int> range(int n, bool wait, int throwPos = -1) {
     if (i == throwPos) {
       throw runtime_error("some error!");
     } else {
-      co_yield wait ? awaitable_suspended() : identity_no_suspend(i);
+      co_yield wait ? awaitable_suspended(i) : identity_no_suspend(i);
     }
   }
   if (throwPos == n) {
@@ -54,12 +55,13 @@ coro<void> co_check(int n, bool wait) {
 }
 
 void do_check(int n, bool wait) {
-  awaitable.clear();
+  awaitables.clear();
+  awaitables.resize(n);
   co_runner<void> cr(co_check(n, wait));
   if (wait) {
     for (int i = 0; i < n; i++) {
       LOG_DEBUG("awaitable.resume({});", i);
-      awaitable.resume(i);
+      awaitables[i].resume(i);
     }
   }
   cr.get_future().get();
@@ -82,7 +84,6 @@ coro<void> traverse(int pos, int size) {
 }
 
 void do_check_exception(int pos, int size = 3) {
-  awaitable.clear();
   co_runner<void> cr(traverse(pos, size));
   REQUIRE_THROWS_AS(cr.get_future().get(), runtime_error);
 }

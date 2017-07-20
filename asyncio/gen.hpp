@@ -27,12 +27,6 @@ public:
           std::experimental::coroutine_handle<promise_type>::from_promise(
               *this));
     }
-    // // suspend_always initial_suspend() = delete;
-
-    // suspend_never initial_suspend() {
-    //   LOG_DEBUG("create initial_suspend(). promise this: 0x{:x}",
-    //   (long)this); return suspend_never{};
-    // }
 
     auto yield_value(ValueType value) {
       _current_ready = true;
