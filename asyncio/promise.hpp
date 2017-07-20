@@ -64,14 +64,19 @@ protected:
 
 template <typename ReturnType> class promise : public promise_base {
 public:
-  void return_value(ReturnType value) {
+  void return_value(ReturnType &&value) {
+    _return_value = std::move(value);
+    this->set_done();
+    LOG_DEBUG("return_value(&&). promise this: {}", (void *)this);
+  }
+  void return_value(ReturnType &value) {
     _return_value = value;
     this->set_done();
-    LOG_DEBUG("return_value(). promise this: {}", (void *)this);
+    LOG_DEBUG("return_value(&). promise this: {}", (void *)this);
   }
   ReturnType get_return_value() {
     this->check_exception();
-    return _return_value;
+    return std::move(_return_value);
   }
   ReturnType _return_value;
 };
@@ -94,14 +99,18 @@ public:
   }
   ~yield_promise() { LOG_DEBUG("Destructing yield_promise: {}", (void *)this); }
 
-  auto yield_value(YiledType &&value) { return yield_value(value); }
-  auto yield_value(YiledType &value) {
+  auto yield_value(YiledType &&value) {
     _yielded = true;
     _yield_value = std::move(value);
     return yield_suspend{};
   }
+  auto yield_value(YiledType &value) {
+    _yielded = true;
+    _yield_value = value;
+    return yield_suspend{};
+  }
 
-  auto get_yield_value() {
+  YiledType get_yield_value() {
     this->check_exception();
     this->clear_yielded();
     return std::move(_yield_value);
