@@ -78,13 +78,21 @@ TEST_CASE("co_gen<int> normal", "[range]") {
   SECTION("3, true") { do_check(3, true); }
 }
 
-coro<void> traverse(int pos, int size) {
+coro<void> traverse(int pos, bool wait, int size) {
   for
-    co_await(auto &&v : range(size, pos)) { (void)v; }
+    co_await(auto &&v : range(size, wait, pos)) { (void)v; }
 }
 
-void do_check_exception(int pos, int size = 3) {
-  co_runner<void> cr(traverse(pos, size));
+void do_check_exception(int pos, bool wait = false, int size = 3) {
+  awaitables.clear();
+  awaitables.resize(size);
+  co_runner<void> cr(traverse(pos, wait, size));
+  if (wait) {
+    for (int i = 0; i < pos; i++) {
+      LOG_DEBUG("awaitable.resume({});", i);
+      awaitables[i].resume(i);
+    }
+  }
   REQUIRE_THROWS_AS(cr.get_future().get(), runtime_error);
 }
 
@@ -93,6 +101,12 @@ TEST_CASE("co_gen<int> exception thrown") {
   SECTION("1") { do_check_exception(1); }
   SECTION("2") { do_check_exception(2); }
   SECTION("3") { do_check_exception(3); }
+}
+TEST_CASE("co_gen<int> exception thrown wait") {
+  SECTION("0") { do_check_exception(0, true); }
+  SECTION("1") { do_check_exception(1, true); }
+  SECTION("2") { do_check_exception(2, true); }
+  SECTION("3") { do_check_exception(3, true); }
 }
 
 // @todo move the following two lines in a separate test framework to make
