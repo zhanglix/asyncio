@@ -2,6 +2,8 @@
 
 #include <experimental/coroutine>
 
+#include "coro.hpp"
+
 BEGIN_ASYNCIO_NAMESPACE;
 
 template <typename ReturnType> class co_runner {

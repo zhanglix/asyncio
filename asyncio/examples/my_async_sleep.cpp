@@ -35,7 +35,7 @@ coro<void> run() {
 
 int main(int argc, char *argv[]) {
   co_runner<void> cr(run());
-  cout << "wating run() to finish" << endl;
+  cout << "waiting run() to finish" << endl;
   cr.get_future().get();
   cout << "run() finished!" << endl;
 }
