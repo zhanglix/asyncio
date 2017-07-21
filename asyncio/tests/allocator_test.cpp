@@ -154,7 +154,7 @@ TEST_CASE("coroutines with default arena", "[allcoator]") {
       output = input;
       co_return;
     };
-    co_runner<void, coro<void, Allocator>> cr(foo(in, out));
+    co_runner<void, coro<void, Allocator>, Allocator> cr(foo(in, out));
     cr.get_future().get();
     REQUIRE(in == out);
   }
