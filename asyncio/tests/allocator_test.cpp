@@ -72,6 +72,7 @@ TEST_CASE("Arena allocator", "[allcoator]") {
 }
 
 struct Allocator {
+  Allocator() { LOG_DEBUG("Constructing Allocator:{}", (void *)this); }
   template <typename... Args>
   void *operator new(size_t size, Arena &arena, Args const &...) noexcept {
     void *p = arena.allocate(size);
@@ -86,8 +87,9 @@ struct Allocator {
   }
 
   void operator delete(void *p, size_t size) noexcept {
+    LOG_DEBUG("operator delete memory:{}", p);
     Arena::deallocate(p);
-    LOG_DEBUG("Freed memory:{}", p);
+    // LOG_DEBUG("Freed memory:{}", p);
   }
 };
 
@@ -168,10 +170,10 @@ TEST_CASE("coro with specific arena", "[allcoator][!shouldfail]") {
   Arena arena;
   SECTION("using a arena") {
     auto co = foo(arena, 3);
-    REQUIRE(arena.addressAllocated.size() == 1);
+    CHECK(arena.addressAllocated.size() == 1);
     co_runner<int, decltype(co)> cr(co);
-    REQUIRE(cr.get_future().get() == 3);
+    CHECK(cr.get_future().get() == 3);
   }
-  REQUIRE(arena.addressAllocated.size() == 0);
+  CHECK(arena.addressAllocated.size() == 0);
 }
 } // namespace allocator_test
