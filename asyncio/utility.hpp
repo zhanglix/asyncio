@@ -6,13 +6,12 @@
 
 BEGIN_ASYNCIO_NAMESPACE;
 
-template <typename ReturnType, typename AllocatorType = DefaultAllocator>
+template <typename ReturnType, typename CoroType = coro<ReturnType>,
+          typename AllocatorType = DefaultAllocator>
 class co_runner {
 public:
-  co_runner(coro<ReturnType, AllocatorType> &co) : _runner(run(co)) {
-    _runner.await_suspend(nullptr);
-  }
-  co_runner(coro<ReturnType, AllocatorType> &&co) : _runner(run(co)) {
+  co_runner(CoroType &co) : _runner(run(co)) { _runner.await_suspend(nullptr); }
+  co_runner(CoroType &&co) : _runner(run(co)) {
     _runner.await_suspend(nullptr);
   }
   co_runner(co_runner &) = delete;
@@ -23,7 +22,7 @@ private:
   coro<void, AllocatorType> _runner;
   std::future<ReturnType> _future;
 
-  coro<void, AllocatorType> run(coro<ReturnType, AllocatorType> &co) {
+  coro<void, AllocatorType> run(CoroType &co) {
     std::promise<ReturnType> promise;
     this->_future = promise.get_future();
     try {
@@ -35,17 +34,33 @@ private:
   }
 };
 
-template <> coro<void> inline co_runner<void>::run(coro<void> &co) {
-  std::promise<void> promise;
-  this->_future = promise.get_future();
-  try {
-    coro<void> co_holder = std::move(co);
-    co_await co_holder;
-    promise.set_value();
-  } catch (...) {
-    promise.set_exception(std::current_exception());
+template <typename CoroType, typename AllocatorType>
+class co_runner<void, CoroType, AllocatorType> {
+public:
+  co_runner(CoroType &co) : _runner(run(co)) { _runner.await_suspend(nullptr); }
+  co_runner(CoroType &&co) : _runner(run(co)) {
+    _runner.await_suspend(nullptr);
   }
-}
+  co_runner(co_runner &) = delete;
+  co_runner(co_runner &&) = delete;
+  std::future<void> get_future() { return std::move(_future); }
+
+private:
+  coro<void, AllocatorType> _runner;
+  std::future<void> _future;
+
+  coro<void, AllocatorType> run(CoroType &co) {
+    std::promise<void> promise;
+    this->_future = promise.get_future();
+    try {
+      CoroType holder = std::move(co);
+      co_await holder;
+      promise.set_value();
+    } catch (...) {
+      promise.set_exception(std::current_exception());
+    }
+  }
+};
 
 class AWaitableBase {
 public:

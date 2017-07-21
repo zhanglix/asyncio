@@ -111,7 +111,7 @@ TEST_CASE("coroutines with default arena", "[allcoator]") {
     REQUIRE(arena.addressAllocated.size() == 1);
     REQUIRE(arena.addressAllocated.find(co.handle_address()) !=
             arena.addressAllocated.end());
-    co_runner<int, Allocator> cr(co);
+    co_runner<int, decltype(co)> cr(co);
     REQUIRE(cr.get_future().get() == 3);
   }
 
@@ -148,6 +148,17 @@ TEST_CASE("coroutines with default arena", "[allcoator]") {
             arena.addressAllocated.end());
   }
 
+  SECTION("co_runner void") {
+    int in = 3, out = 4;
+    auto foo = [](int input, int &output) -> coro<void, Allocator> {
+      output = input;
+      co_return;
+    };
+    co_runner<void, coro<void, Allocator>> cr(foo(in, out));
+    cr.get_future().get();
+    REQUIRE(in == out);
+  }
+
   REQUIRE(arena.addressAllocated.size() == 0);
 }
 
@@ -158,7 +169,7 @@ TEST_CASE("coro with specific arena", "[allcoator][!shouldfail]") {
   SECTION("using a arena") {
     auto co = foo(arena, 3);
     REQUIRE(arena.addressAllocated.size() == 1);
-    co_runner<int, Allocator> cr(co);
+    co_runner<int, decltype(co)> cr(co);
     REQUIRE(cr.get_future().get() == 3);
   }
   REQUIRE(arena.addressAllocated.size() == 0);
