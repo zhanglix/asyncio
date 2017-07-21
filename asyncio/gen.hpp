@@ -4,25 +4,27 @@
 #include <future>
 #include <type_traits>
 
+#include "allocator.hpp"
 #include "log.hpp"
 #include "promise.hpp"
 
 BEGIN_ASYNCIO_NAMESPACE;
 
-template <typename ValueType> class gen {
+template <typename ValueType, typename AllocatorType = DefaultAllocator>
+class gen {
 public:
   using handle_base = std::experimental::coroutine_handle<>;
 
-  class promise_type : public yield_promise<ValueType> {
+  class promise_type : public yield_promise<ValueType>, public AllocatorType {
   public:
     auto get_return_object() {
-      return gen<ValueType>(
+      return gen(
           std::experimental::coroutine_handle<promise_type>::from_promise(
               *this));
     }
 
     static auto get_return_object_on_allocation_failure() {
-      return gen<ValueType>(nullptr);
+      return gen(nullptr);
     }
   };
 
@@ -80,6 +82,14 @@ public:
     _handle = other._handle;
     other._handle = std::experimental::coroutine_handle<promise_type>();
     return *this;
+  }
+
+  void *handle_address() {
+    if (_handle) {
+      return _handle.address();
+    } else {
+      return nullptr;
+    }
   }
 
 private:

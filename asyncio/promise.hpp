@@ -53,7 +53,7 @@ public:
   }
 
   ~promise_base() {
-    LOG_DEBUG("Destructing promise_base: {0:x}", (void *)this);
+    LOG_DEBUG("Destructing promise_base: {}", (void *)this);
   }
 
 protected:
@@ -183,5 +183,6 @@ done_suspend::await_suspend(std::experimental::coroutine_handle<>) const
   // this line may trigger access invalid address
   //  LOG_DEBUG("caller resumed. this: {}", (void*)this);
 }
+
 
 END_ASYNCIO_NAMESPACE;

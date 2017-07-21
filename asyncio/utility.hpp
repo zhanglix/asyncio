@@ -6,12 +6,13 @@
 
 BEGIN_ASYNCIO_NAMESPACE;
 
-template <typename ReturnType> class co_runner {
+template <typename ReturnType, typename AllocatorType = DefaultAllocator>
+class co_runner {
 public:
-  co_runner(coro<ReturnType> &co) : _runner(run(co)) {
+  co_runner(coro<ReturnType, AllocatorType> &co) : _runner(run(co)) {
     _runner.await_suspend(nullptr);
   }
-  co_runner(coro<ReturnType> &&co) : _runner(run(co)) {
+  co_runner(coro<ReturnType, AllocatorType> &&co) : _runner(run(co)) {
     _runner.await_suspend(nullptr);
   }
   co_runner(co_runner &) = delete;
@@ -19,10 +20,10 @@ public:
   std::future<ReturnType> get_future() { return std::move(_future); }
 
 private:
-  coro<void> _runner;
+  coro<void, AllocatorType> _runner;
   std::future<ReturnType> _future;
 
-  coro<void> run(coro<ReturnType> &co) {
+  coro<void, AllocatorType> run(coro<ReturnType, AllocatorType> &co) {
     std::promise<ReturnType> promise;
     this->_future = promise.get_future();
     try {
