@@ -1,6 +1,7 @@
 #pragma once
 #include <asyncio/common.hpp>
 
+#include <exception>
 #include <experimental/coroutine>
 #include <future>
 
@@ -33,29 +34,41 @@ public:
 
   operator bool() const { return bool(_handle); }
 
-  bool await_ready() const noexcept {
+  bool await_ready() const {
     LOG_DEBUG("await_ready. coro this: {}, handle: {}", (void *)this,
               _handle.address());
-    return _handle.promise().ready();
+    if (_handle) {
+      return _handle.promise().ready();
+    } else {
+      throw std::invalid_argument("handle is nullptr!");
+    }
   }
 
   bool await_suspend(handle_base caller_handle) {
     LOG_DEBUG("await_suspend. coro this: {}, "
               "handle: {} caller_handle: {}",
               (void *)this, _handle.address(), caller_handle.address());
-    _handle.resume();
-    if (_handle.promise().need_suspend()) {
-      _handle.promise().set_caller_handle(caller_handle);
-      return true;
+    if (_handle) {
+      _handle.resume();
+      if (_handle.promise().need_suspend()) {
+        _handle.promise().set_caller_handle(caller_handle);
+        return true;
+      } else {
+        return false;
+      }
     } else {
-      return false;
+      throw std::invalid_argument("handle is nullptr!");
     }
   }
 
   ReturnType await_resume() const {
     LOG_DEBUG("await_resume. coro this: {}, handle: {}", (void *)this,
               _handle.address());
-    return _handle.promise().get_return_value();
+    if (_handle) {
+      return _handle.promise().get_return_value();
+    } else {
+      throw std::invalid_argument("handle is nullptr!");
+    }
   }
 
   void destroy_handle() {

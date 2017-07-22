@@ -75,6 +75,7 @@ TEST_CASE("AWaitable<int> test with service", "[awaitable]") {
 }
 
 TEST_CASE("AWaitable<int> throw", "[awaitable]") {
+  LOG_DEBUG("Waitable<int> throw test case started");
   SomeService service;
   coro<int> co(nullptr);
   SECTION("immediately") {
@@ -97,6 +98,7 @@ TEST_CASE("AWaitable<int> throw", "[awaitable]") {
   co_runner<int> cr(co);
   service.triggerCallback();
   REQUIRE_THROWS_AS(cr.get_future().get(), runtime_error);
+  LOG_DEBUG("AWaitable<int> throw test case finished!");
 }
 
 TEST_CASE("AWaitable<void> unit", "[awaitable]") {
@@ -114,5 +116,12 @@ TEST_CASE("AWaitable<void> unit", "[awaitable]") {
     CHECK(awaitable.await_ready());
     CHECK_FALSE(awaitable.await_suspend(nullptr));
     REQUIRE_THROWS_AS(awaitable.await_resume(), runtime_error);
+  }
+}
+
+TEST_CASE("co_runner abnormal cases", "[abnormal]") {
+  SECTION("nullptr handle") {
+    co_runner<void> cr(coro<void>(nullptr));
+    REQUIRE_THROWS_AS(cr.get_future().get(), invalid_argument);
   }
 }

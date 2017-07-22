@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.hpp"
+#include <exception>
 #include <experimental/coroutine>
 
 #include "log.hpp"
@@ -52,9 +53,7 @@ public:
     done = true;
   }
 
-  ~promise_base() {
-    LOG_DEBUG("Destructing promise_base: {}", (void *)this);
-  }
+  ~promise_base() { LOG_DEBUG("Destructing promise_base: {}", (void *)this); }
 
 protected:
   coroutine_handle caller_handle;
@@ -140,13 +139,17 @@ public:
   auto operator*() const { return std::move(_value); }
   bool next() {
     LOG_DEBUG("next. this: {}, handle: {}", (void *)this, _handle.address());
-    PromiseType &promise = _handle.promise();
-    _handle.resume(); // assert there is no co_await in co_gen<> coroutines.
-    if (!promise.yielded()) {
-      promise.check_exception();
-      _handle = nullptr;
+    if (_handle) {
+      PromiseType &promise = _handle.promise();
+      _handle.resume(); // assert there is no co_await in co_gen<> coroutines.
+      if (!promise.yielded()) {
+        promise.check_exception();
+        _handle = nullptr;
+      }
+      return promise.yielded();
+    } else {
+      throw std::invalid_argument("handle in yield_iterator is nullptr!");
     }
-    return promise.yielded();
   }
 
 protected:
@@ -183,6 +186,5 @@ done_suspend::await_suspend(std::experimental::coroutine_handle<>) const
   // this line may trigger access invalid address
   //  LOG_DEBUG("caller resumed. this: {}", (void*)this);
 }
-
 
 END_ASYNCIO_NAMESPACE;
