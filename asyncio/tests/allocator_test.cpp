@@ -89,7 +89,6 @@ struct Allocator {
   void operator delete(void *p, size_t size) noexcept {
     LOG_DEBUG("operator delete memory:{}", p);
     Arena::deallocate(p);
-    // LOG_DEBUG("Freed memory:{}", p);
   }
 };
 

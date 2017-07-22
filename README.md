@@ -230,13 +230,38 @@ brew tap homebrew/versions
 brew install --HEAD llvm #this will install libc++ by default
 brew install cmake
 
-cd $PATH_TO_ASYNC_IO && mkdir -p build && cd build
+cd $ASYNCIO_PATH && mkdir -p build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release .. #there are some option in Debug config which conflict with -fcoroutines-ts that will cause clang crash.
 make -j 10
 make test
 ```
 ### On Linux
 TODO
+
+## Overhead of Coroutines
+You can think of a coroutine just as a normal function with most of its local variables stored in a state object which should be allocated in heap. For each instance (call) of coroutine, the compiler will generate codes to allocate memory for that instance before it is created, and codes to recycle memory of after its destruction. The default method for allocating/recycling is the standard *operator new()* and *operator delete* methods. 
+
+For some performance critical portion of the code, the standard approach to allocate/recycle state object maybe unacceptable. There are two ways you can do to improve it.
+
+First, you can use a better malloc implementation, such as tcmalloc, or Lockless Memory Allocator. 
+
+Second, you can provide you own allocator for each coroutine method through the second template paramenter of class coro<>, gen<>, co_gen<>. For example:
+```c++
+class MyAllocator{
+  void *operator new(size_t size) noexcept {
+    void *p = Arena::getDefaultArena().allocate(size);
+    return p;
+  }
+  void operator delete(void *p, size_t size) noexcept {
+    Arena::deallocate(p);
+  }
+};
+
+coro<int, MyAllocator> identity(int x) {co_return x;}
+
+```
+
+for more details, see [allocator_test.cpp](asyncio/tests/allocator_test.cpp)
 
 
 
