@@ -53,10 +53,11 @@ coro<void> handleSearch(Request &request) {
 }
 ```
 
-## How to install
-Now, AsyncIO is a header only library, so all you need to do are downloading it and telling clang where to find it.
-
 ## Tutorial
+
+### How to install
+
+Now, AsyncIO is a header only library, so all you need to do are downloading it and telling clang where to find it.
 
 ### How to write a coroutine method/function
 
@@ -246,8 +247,8 @@ run() finished!
 ```
 
 
-## Run AsyncIO Tests
-### On MacOS X
+### How to Run AsyncIO Tests
+#### On MacOS X
 Make sure you have installed llvm 5.0 or above, libc++ and cmake. the simplest way to install it is use brew
 ```bash
 brew tap homebrew/versions
@@ -259,7 +260,7 @@ cmake -DCMAKE_BUILD_TYPE=Release .. #there are some option in Debug config which
 make -j 10
 make test
 ```
-### On Linux
+#### On Linux
 TODO
 
 
