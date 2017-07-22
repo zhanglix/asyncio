@@ -1,21 +1,21 @@
 ## What is AsyncIO?
 
-Currently, AsyncIO is a C++ coroutine helper libraryr based on llvm-5.0 (or above) coroutine feature to make it much easier to write coroutine methods, generator and asynchronous generators. 
+Currently, AsyncIO is a C++ coroutine helper library based on llvm-5.0's (or above) coroutine feature. AsyncIO makes it much easier to write coroutine methods, generator sand asynchronous generators. 
 
 ## What is coroutine?
-A coroutine is a special kind of _Functions_ whose execution can be 'paused' at some specific positions and resumed later.  Coroutines can make asynchronous event driven logic looks like synchronous, and has much lower overhead than multithreading synchronous implementation. 
+Coroutines are of a special kind of _Functions_ whose execution can be 'paused' at some specific positions and be resumed at the paused position later.  Coroutines can make writing asynchronous logic codes like synchronous codes, and has much lower overhead than multithreading synchronous implementation. 
 
-A typical event-driven logic which based on callback mechanism usually looks like this:
+A typical asynchronous event-driven logic which based on callback mechanism usually looks like this:
 
 ```c++
 // asynchronous callback based event-driven logic
 void handleSearchQuery(Request &request) {
-  Rewriter rewriter("rpc://localhost/queryrewriter");
+  Rewriter rewriter("rpc://rewriter/");
   rewriter.rewrite(request, rewriteCallback);
 }
 
 void rewriteCallback(Request &request) {
-  SearchService search("rpc://somehost/");
+  SearchService search("rpc://search/");
   search.search(request, searchCallback);
 }
 
@@ -26,25 +26,27 @@ void searchCallback(Request &request, Response &response) {
 
 void replyCallCallback(Request &request, int status) {
   if (status == Status::OK) {
-    LOG("{} succeed!", request);
+    LOG_INFO("{} succeed!", request);
   } else {
     LOG_ERROR("{} failed! status: {}", request, status);
   }
 }
 ```
 
-and the same asynchronous logic can be rewrite with coroutines like this:
+and the same asynchronous logic can be rewritten with coroutines like this:
 ```c++
+// coroutine based asynchronous event-driven logic,
+// you can try catch exceptions in asynchronous codes as if it is synchronous. Amazing!
 coro<void> handleSearch(Request &request) {
   try{
-    Rewriter rewriter("rpc://localhost/queryrewriter");
-    SearchService search("rpc://somehost/");
+    Rewriter rewriter("rpc://rewriter/");
+    SearchService search("rpc://search/");
     ResponseEndPoint endpoint;
 
     co_await rewriter(request);
     Response response = co_await search.search(request);
     co_await = endpoint.reply(request, response);
-    LOG("{} succeed!", request);
+    LOG_INFO("{} succeed!", request);
   }catch(std::exception &e){
     LOG_ERROR("{} failed! Error: {}", request, e.what());
   }
@@ -53,7 +55,7 @@ coro<void> handleSearch(Request &request) {
 
 ## How to use AsyncIO
 ### How to install
-No, AsyncIO is a header only library, so all you need to do is download it and tell clang where to find it .
+Now, AsyncIO is a header only library, so all you need to do are downloading it and telling clang where to find it.
 
 ### Tutorial
 
@@ -152,6 +154,73 @@ int main(int argc, char* argv[]) {
 
 ### Examples
 There are some examples in asyncio/examples directory. For more detail infomation about specific class, you can check the tests in asyncio/tests directory or just have a look at the code. 
+
+#### my_async_sleep.cpp
+Source Code: my_async_sleep.cpp
+
+```c++
+#include <chrono>
+#include <iostream>
+#include <thread>
+
+#include <asyncio/coroutine.hpp>
+
+using namespace std;
+using namespace std::chrono;
+using namespace asyncio;
+
+coro<void> my_async_sleep(milliseconds ms) {
+  AWaitable<void> awaitable;
+  thread t([&] {
+    // coro<> is not thread safe, for producetion code
+    // it is recommended to base coro<> on some single threading
+    // callback library such as libuv.
+    cout << "sleep ..." << endl;
+    this_thread::sleep_for(ms);
+    cout << "After sleep!" << endl;
+    awaitable.resume();
+  });
+  t.detach();
+  co_await awaitable;
+}
+
+coro<void> run() {
+  cout << "start run!" << endl;
+  cout << "before first sleep" << endl;
+  co_await my_async_sleep(100ms);
+  cout << "before second sleep" << endl;
+  co_await my_async_sleep(200ms);
+  cout << "end run!" << endl;
+}
+
+int main(int argc, char *argv[]) {
+  co_runner<void> cr(run());
+  cout << "waiting run() to finish" << endl;
+  cr.get_future().get();
+  cout << "run() finished!" << endl;
+}
+
+```
+compile it 
+
+```bash
+# suppose you download asyncio at $ASYNCIO_PATH
+$ clang -I $ASYNCIO_PATH -o my_async_sleep -lc++ -std=c++14 -stdlib=libc++ -fcoroutines-ts my_async_sleep.cpp
+ 
+$ ./my_async_sleep
+start run!
+before first sleep
+waiting run() to finishsleep ...
+
+After sleep!
+before second sleep
+sleep ...
+After sleep!
+end run!
+run() finished!
+
+```
+
 
 ## Run AsyncIO Tests
 ### On MacOS X
