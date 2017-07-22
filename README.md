@@ -1,9 +1,9 @@
 ## What is AsyncIO?
 
-Currently, AsyncIO is a C++ coroutine helper library based on llvm-5.0's (or above) coroutine feature. AsyncIO makes it much easier to write coroutine methods, generator sand asynchronous generators. 
+Currently, AsyncIO is a C++ coroutine helper library based on llvm-5.0's (or above) coroutine feature. AsyncIO makes it much easier to write coroutine methods, generators and asynchronous generators. 
 
-## What is coroutine?
-Coroutines are of a special kind of _Functions_ whose execution can be 'paused' at some specific positions and be resumed at the paused position later.  Coroutines can make writing asynchronous logic codes like synchronous codes, and has much lower overhead than multithreading synchronous implementation. 
+## What are Coroutines?
+Coroutines are of a special kind of _Functions_ whose execution can be 'paused' at some specific positions and be resumed at the paused position later. With Coroutines asynchronous codes can be written like synchronous codes, and has much lower overhead than multithreading synchronous implementation. 
 
 A typical asynchronous event-driven logic which based on callback mechanism usually looks like this:
 
@@ -43,7 +43,7 @@ coro<void> handleSearch(Request &request) {
     SearchService search("rpc://search/");
     ResponseEndPoint endpoint;
 
-    co_await rewriter(request);
+    co_await rewriter.rewrite(request);
     Response response = co_await search.search(request);
     co_await = endpoint.reply(request, response);
     LOG_INFO("{} succeed!", request);
@@ -53,13 +53,12 @@ coro<void> handleSearch(Request &request) {
 }
 ```
 
-## How to use AsyncIO
-### How to install
+## How to install
 Now, AsyncIO is a header only library, so all you need to do are downloading it and telling clang where to find it.
 
-### Tutorial
+## Tutorial
 
-#### How to write a coroutine method/function
+### How to write a coroutine method/function
 
 Define a method/function whose return type is coro\<SomeType>, then you can use *co_await* and *co_return* in your method/function.
 
@@ -90,7 +89,7 @@ coro<string> query(string request, Service &service) {
 }
 ```
 
-#### How to write a generator
+### How to write a generator
 A generator is a special kind of coroutine which can be used to generate a sequence of values. Using a generator can mimic the behavior of containers without relly store those elements. Typical usages of generator are in range-based for loops.
 
 To define a generator, define the return type of your method as gen\<SomeType>, and use *co_yield* keyword to generator values.
@@ -114,7 +113,7 @@ int main(int argc, char* argv[]) {
 //0 1 2 3 4 5 6 7 8 9
 ```
 
-#### How to write a asynchronous generator
+### How to write a asynchronous generator
 A asynchronous generator is similary with generator except it *begin* and *operator++* method are coroutines, so that it can be used in a range-based for co_await loop.
 
 To define a asynchronous generator, define the return type of your method as co_gen\<SomeType>, and use *co_yield* keyword to generator values of type coro<SomeType>.
@@ -138,7 +137,7 @@ coro<void> asyncTraversal(int n) {
 }
 ```
 
-#### How to run a coro\<Sometype> in normal function context
+### How to run a coro\<Sometype> in normal function context
 Since co_await can only exist in coroutine context, AsyncIO provides a helper class co_runner<Sometype> to simplify the interaction with coroutines.
 
 ```c++
@@ -152,10 +151,35 @@ int main(int argc, char* argv[]) {
 //0 1 2 3 4 5 6 7 8 9
 ```
 
-### Examples
+### How to Customize Memory Allocation
+You can think of a coroutine just as a normal function with most of its local variables stored in a state object which should be allocated in heap. For each instance (call) of coroutine, the compiler will generate codes to allocate memory for that instance before it is created, and codes to recycle memory of after its destruction. The default method for allocating/recycling is the standard *operator new()* and *operator delete* methods. 
+
+For some performance critical portion of the code, the standard approach to allocate/recycle state object maybe unacceptable. There are two ways you can do to improve it.
+
+First, you can use a better malloc implementation, such as tcmalloc, or Lockless Memory Allocator. 
+
+Second, you can provide you own allocator for each coroutine method through the second template paramenter of class coro<>, gen<>, co_gen<>. For example:
+```c++
+class MyAllocator{
+  void *operator new(size_t size) noexcept {
+    void *p = Arena::getDefaultArena().allocate(size);
+    return p;
+  }
+  void operator delete(void *p, size_t size) noexcept {
+    Arena::deallocate(p);
+  }
+};
+
+coro<int, MyAllocator> identity(int x) {co_return x;}
+
+```
+
+for more details, see [allocator_test.cpp](asyncio/tests/allocator_test.cpp)
+
+## Examples
 There are some examples in asyncio/examples directory. For more detail infomation about specific class, you can check the tests in asyncio/tests directory or just have a look at the code. 
 
-#### my_async_sleep.cpp
+### my_async_sleep.cpp
 Source Code: my_async_sleep.cpp
 
 ```c++
@@ -204,7 +228,7 @@ int main(int argc, char *argv[]) {
 compile it 
 
 ```bash
-# suppose you download asyncio at $ASYNCIO_PATH
+# suppose you downloaded asyncio at $ASYNCIO_PATH
 $ clang -I $ASYNCIO_PATH -o my_async_sleep -lc++ -std=c++14 -stdlib=libc++ -fcoroutines-ts my_async_sleep.cpp
  
 $ ./my_async_sleep
@@ -238,30 +262,6 @@ make test
 ### On Linux
 TODO
 
-## Overhead of Coroutines
-You can think of a coroutine just as a normal function with most of its local variables stored in a state object which should be allocated in heap. For each instance (call) of coroutine, the compiler will generate codes to allocate memory for that instance before it is created, and codes to recycle memory of after its destruction. The default method for allocating/recycling is the standard *operator new()* and *operator delete* methods. 
-
-For some performance critical portion of the code, the standard approach to allocate/recycle state object maybe unacceptable. There are two ways you can do to improve it.
-
-First, you can use a better malloc implementation, such as tcmalloc, or Lockless Memory Allocator. 
-
-Second, you can provide you own allocator for each coroutine method through the second template paramenter of class coro<>, gen<>, co_gen<>. For example:
-```c++
-class MyAllocator{
-  void *operator new(size_t size) noexcept {
-    void *p = Arena::getDefaultArena().allocate(size);
-    return p;
-  }
-  void operator delete(void *p, size_t size) noexcept {
-    Arena::deallocate(p);
-  }
-};
-
-coro<int, MyAllocator> identity(int x) {co_return x;}
-
-```
-
-for more details, see [allocator_test.cpp](asyncio/tests/allocator_test.cpp)
 
 
 
