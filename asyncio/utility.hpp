@@ -74,22 +74,38 @@ public:
     return !_ready;
   }
 
+  template <typename E> void raise(E e) {
+    this->_exception = std::make_exception_ptr(e);
+    this->setReady();
+    this->resumeCaller();
+  }
+
 protected:
-  // void await_resume() const noexcept {}
   void setReady() { _ready = true; }
   void resumeCaller() {
     if (_caller) {
       _caller.resume();
     }
   }
+  void checkException() {
+    if (this->_exception) {
+      std::exception_ptr ptr = this->_exception;
+      this->_exception = nullptr;
+      std::rethrow_exception(ptr);
+    }
+  }
 
   bool _ready;
   std::experimental::coroutine_handle<> _caller;
+  std::exception_ptr _exception;
 };
 
 template <typename T> class AWaitable : public AWaitableBase {
 public:
-  T await_resume() const noexcept { return std::move(_value); }
+  T await_resume() {
+    this->checkException();
+    return std::move(_value);
+  }
   void resume(T &&value) {
     _value = std::move(value);
     this->setReady();
@@ -107,7 +123,7 @@ private:
 
 template <> class AWaitable<void> : public AWaitableBase {
 public:
-  void await_resume() const noexcept {}
+  void await_resume() { this->checkException(); }
   void resume() {
     this->setReady();
     this->resumeCaller();

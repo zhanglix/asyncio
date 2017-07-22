@@ -81,7 +81,7 @@ coro<string> query(string request, Service &service) {
                   if (error == 0) {
                     aw->resume(response);
                   } else {
-                    aw->setException(std::make_exception_ptr(error))
+                    aw->throw(runtime_error("some error"));
                   }
                 });
   co_return co_await awaitable;
