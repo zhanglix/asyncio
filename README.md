@@ -45,7 +45,7 @@ coro<void> handleSearch(Request &request) {
 
     co_await rewriter.rewrite(request);
     Response response = co_await search.search(request);
-    co_await = endpoint.reply(request, response);
+    co_await endpoint.reply(request, response);
     LOG_INFO("{} succeed!", request);
   }catch(std::exception &e){
     LOG_ERROR("{} failed! Error: {}", request, e.what());
