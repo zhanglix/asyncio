@@ -177,6 +177,23 @@ coro<int, MyAllocator> identity(int x) {co_return x;}
 
 for more details, see [allocator_test.cpp](asyncio/tests/allocator_test.cpp)
 
+### How to Run AsyncIO Tests
+
+#### On MacOS X
+Make sure you have installed llvm 5.0 or above, libc++ and cmake. the simplest way to install it is use brew
+```bash
+brew tap homebrew/versions
+brew install --HEAD llvm #this will install libc++ by default
+brew install cmake
+
+cd $ASYNCIO_PATH && mkdir -p build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release .. #there are some option in Debug config which conflict with -fcoroutines-ts that will cause clang crash.
+make -j 10
+make test
+```
+#### On Linux
+TO BE ADD
+
 ## Examples
 There are some examples in asyncio/examples directory. For more detail infomation about specific class, you can check the tests in asyncio/tests directory or just have a look at the code. 
 
@@ -246,22 +263,6 @@ run() finished!
 
 ```
 
-
-### How to Run AsyncIO Tests
-#### On MacOS X
-Make sure you have installed llvm 5.0 or above, libc++ and cmake. the simplest way to install it is use brew
-```bash
-brew tap homebrew/versions
-brew install --HEAD llvm #this will install libc++ by default
-brew install cmake
-
-cd $ASYNCIO_PATH && mkdir -p build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release .. #there are some option in Debug config which conflict with -fcoroutines-ts that will cause clang crash.
-make -j 10
-make test
-```
-#### On Linux
-TODO
 
 
 
