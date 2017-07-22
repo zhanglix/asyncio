@@ -4,25 +4,28 @@
 #include <future>
 #include <type_traits>
 
+#include "allocator.hpp"
 #include "coro.hpp"
 #include "log.hpp"
 #include "promise.hpp"
 
 BEGIN_ASYNCIO_NAMESPACE;
 
-template <typename ValueType> class co_gen {
+template <typename ValueType, typename AllocatorType = DefaultAllocator>
+class co_gen {
 public:
   using handle_base = std::experimental::coroutine_handle<>;
 
-  class promise_type : public yield_promise<coro<ValueType>> {
+  class promise_type : public yield_promise<coro<ValueType, AllocatorType>>,
+                       public AllocatorType {
   public:
     auto get_return_object() {
-      return co_gen<ValueType>(
+      return co_gen(
           std::experimental::coroutine_handle<promise_type>::from_promise(
               *this));
     }
     static auto get_return_object_on_allocation_failure() {
-      return co_gen<ValueType>(nullptr);
+      return co_gen(nullptr);
     }
   };
 
@@ -33,14 +36,14 @@ public:
     iterator(handle_type handle = nullptr)
         : yield_iterator<ValueType, promise_type>(handle) {}
 
-    coro<void> operator++() {
+    coro<void, AllocatorType> operator++() {
       if (this->next()) {
         this->_value = co_await this->_handle.promise().get_yield_value();
       }
     }
   };
 
-  coro<iterator> begin() const {
+  coro<iterator, AllocatorType> begin() const {
     LOG_DEBUG("co_gen begin. coro this: {}, handle: {}", (void *)this,
               _handle.address());
     auto iter = iterator(_handle);
@@ -83,6 +86,14 @@ public:
     _handle = other._handle;
     other._handle = std::experimental::coroutine_handle<promise_type>();
     return *this;
+  }
+
+  void *handle_address() {
+    if (_handle) {
+      return _handle.address();
+    } else {
+      return nullptr;
+    }
   }
 
 private:

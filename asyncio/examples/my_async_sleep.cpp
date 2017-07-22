@@ -2,8 +2,7 @@
 #include <iostream>
 #include <thread>
 
-#include <asyncio/coro.hpp>
-#include <asyncio/utility.hpp>
+#include <asyncio/coroutine.hpp>
 
 using namespace std;
 using namespace std::chrono;

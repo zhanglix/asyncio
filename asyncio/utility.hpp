@@ -6,12 +6,12 @@
 
 BEGIN_ASYNCIO_NAMESPACE;
 
-template <typename ReturnType> class co_runner {
+template <typename ReturnType, typename CoroType = coro<ReturnType>,
+          typename AllocatorType = DefaultAllocator>
+class co_runner {
 public:
-  co_runner(coro<ReturnType> &co) : _runner(run(co)) {
-    _runner.await_suspend(nullptr);
-  }
-  co_runner(coro<ReturnType> &&co) : _runner(run(co)) {
+  co_runner(CoroType &co) : _runner(run(co)) { _runner.await_suspend(nullptr); }
+  co_runner(CoroType &&co) : _runner(run(co)) {
     _runner.await_suspend(nullptr);
   }
   co_runner(co_runner &) = delete;
@@ -19,10 +19,10 @@ public:
   std::future<ReturnType> get_future() { return std::move(_future); }
 
 private:
-  coro<void> _runner;
+  coro<void, AllocatorType> _runner;
   std::future<ReturnType> _future;
 
-  coro<void> run(coro<ReturnType> &co) {
+  coro<void, AllocatorType> run(CoroType &co) {
     std::promise<ReturnType> promise;
     this->_future = promise.get_future();
     try {
@@ -34,17 +34,33 @@ private:
   }
 };
 
-template <> coro<void> inline co_runner<void>::run(coro<void> &co) {
-  std::promise<void> promise;
-  this->_future = promise.get_future();
-  try {
-    coro<void> co_holder = std::move(co);
-    co_await co_holder;
-    promise.set_value();
-  } catch (...) {
-    promise.set_exception(std::current_exception());
+template <typename CoroType, typename AllocatorType>
+class co_runner<void, CoroType, AllocatorType> {
+public:
+  co_runner(CoroType &co) : _runner(run(co)) { _runner.await_suspend(nullptr); }
+  co_runner(CoroType &&co) : _runner(run(co)) {
+    _runner.await_suspend(nullptr);
   }
-}
+  co_runner(co_runner &) = delete;
+  co_runner(co_runner &&) = delete;
+  std::future<void> get_future() { return std::move(_future); }
+
+private:
+  coro<void, AllocatorType> _runner;
+  std::future<void> _future;
+
+  coro<void, AllocatorType> run(CoroType &co) {
+    std::promise<void> promise;
+    this->_future = promise.get_future();
+    try {
+      CoroType holder = std::move(co);
+      co_await holder;
+      promise.set_value();
+    } catch (...) {
+      promise.set_exception(std::current_exception());
+    }
+  }
+};
 
 class AWaitableBase {
 public:
@@ -58,22 +74,38 @@ public:
     return !_ready;
   }
 
+  template <typename E> void raise(E e) {
+    this->_exception = std::make_exception_ptr(e);
+    this->setReady();
+    this->resumeCaller();
+  }
+
 protected:
-  // void await_resume() const noexcept {}
   void setReady() { _ready = true; }
   void resumeCaller() {
     if (_caller) {
       _caller.resume();
     }
   }
+  void checkException() {
+    if (this->_exception) {
+      std::exception_ptr ptr = this->_exception;
+      this->_exception = nullptr;
+      std::rethrow_exception(ptr);
+    }
+  }
 
   bool _ready;
   std::experimental::coroutine_handle<> _caller;
+  std::exception_ptr _exception;
 };
 
 template <typename T> class AWaitable : public AWaitableBase {
 public:
-  T await_resume() const noexcept { return std::move(_value); }
+  T await_resume() {
+    this->checkException();
+    return std::move(_value);
+  }
   void resume(T &&value) {
     _value = std::move(value);
     this->setReady();
@@ -91,7 +123,7 @@ private:
 
 template <> class AWaitable<void> : public AWaitableBase {
 public:
-  void await_resume() const noexcept {}
+  void await_resume() { this->checkException(); }
   void resume() {
     this->setReady();
     this->resumeCaller();

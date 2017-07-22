@@ -4,28 +4,30 @@
 #include <experimental/coroutine>
 #include <future>
 
+#include "allocator.hpp"
 #include "log.hpp"
 #include "promise.hpp"
 
 BEGIN_ASYNCIO_NAMESPACE;
 
-template <typename ReturnType> class coro {
+template <typename ReturnType, typename AllocatorType = DefaultAllocator>
+class coro {
 public:
   using handle_base = std::experimental::coroutine_handle<>;
 
-  class promise_type : public promise<ReturnType> {
+  class promise_type : public promise<ReturnType>, public AllocatorType {
   public:
     promise_type() { LOG_DEBUG("Constructing promise: {}", (void *)this); }
     ~promise_type() { LOG_DEBUG("Destructing promise: {}", (void *)this); }
 
     auto get_return_object() {
       LOG_DEBUG("get_return_object: promise: {}", (void *)this);
-      return coro<ReturnType>(
+      return coro(
           std::experimental::coroutine_handle<promise_type>::from_promise(
               *this));
     }
     static auto get_return_object_on_allocation_failure() {
-      return coro<ReturnType>(nullptr);
+      return coro(nullptr);
     }
   };
 
@@ -88,6 +90,14 @@ public:
     _handle = other._handle;
     other._handle = std::experimental::coroutine_handle<promise_type>();
     return *this;
+  }
+
+  void *handle_address() {
+    if (_handle) {
+      return _handle.address();
+    } else {
+      return nullptr;
+    }
   }
 
 private:

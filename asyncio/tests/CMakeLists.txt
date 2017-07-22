@@ -3,9 +3,10 @@ add_executable(
   do_test.cpp
   coro_test.cpp
   std_promise_test.cpp
-  co_utility_test.cpp
+  utility_test.cpp
   gen_test.cpp
   co_gen_test.cpp
+  allocator_test.cpp
   )
 #target_link_libraries (asyncio_test  asyncio)
 

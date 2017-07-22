@@ -1,12 +1,16 @@
 #include <catch.hpp>
 #include <chrono>
+#include <exception>
 #include <sstream>
 #include <string>
 
+#define ENABLE_ASYNCIO_LOG
 #include <asyncio/log.hpp>
 
 #include <asyncio/coro.hpp>
 #include <asyncio/utility.hpp>
+
+using namespace std;
 
 USING_ASYNNCIO_NAMESPACE;
 
@@ -36,7 +40,13 @@ private:
 
 void callback(void *userData, int status) {
   auto awaitablePointer = (AWaitable<int> *)userData;
-  awaitablePointer->resume(status);
+  if (status < 0) {
+    LOG_DEBUG("will raise error: {}", status);
+    awaitablePointer->raise(runtime_error("some error"));
+  } else {
+    LOG_DEBUG("will resume: {}", status);
+    awaitablePointer->resume(status);
+  }
 }
 
 TEST_CASE("AWaitable<int> test with service", "[awaitable]") {
@@ -64,12 +74,45 @@ TEST_CASE("AWaitable<int> test with service", "[awaitable]") {
   REQUIRE(cr.get_future().get() == 3);
 }
 
+TEST_CASE("AWaitable<int> throw", "[awaitable]") {
+  SomeService service;
+  coro<int> co(nullptr);
+  SECTION("immediately") {
+    auto send = [](SomeService &service, int expectStauts) -> coro<int> {
+      AWaitable<int> awaitable;
+      service.sendCallbackNow(expectStauts, &awaitable, callback);
+      co_return co_await awaitable;
+    };
+    co = send(service, -1);
+  }
+
+  SECTION("later") {
+    auto send = [](SomeService &service, int expectStauts) -> coro<int> {
+      AWaitable<int> awaitable;
+      service.sendCallbackLater(expectStauts, &awaitable, callback);
+      co_return co_await awaitable;
+    };
+    co = send(service, -1);
+  }
+  co_runner<int> cr(co);
+  service.triggerCallback();
+  REQUIRE_THROWS_AS(cr.get_future().get(), runtime_error);
+}
+
 TEST_CASE("AWaitable<void> unit", "[awaitable]") {
   AWaitable<void> awaitable;
   CHECK_FALSE(awaitable.await_ready());
   CHECK(awaitable.await_suspend(nullptr));
-  awaitable.resume();
-  CHECK(awaitable.await_ready());
-  CHECK_FALSE(awaitable.await_suspend(nullptr));
-  awaitable.await_resume();
+  SECTION("not throw") {
+    awaitable.resume();
+    CHECK(awaitable.await_ready());
+    CHECK_FALSE(awaitable.await_suspend(nullptr));
+    awaitable.await_resume();
+  }
+  SECTION("throw") {
+    awaitable.raise(runtime_error("blabla"));
+    CHECK(awaitable.await_ready());
+    CHECK_FALSE(awaitable.await_suspend(nullptr));
+    REQUIRE_THROWS_AS(awaitable.await_resume(), runtime_error);
+  }
 }

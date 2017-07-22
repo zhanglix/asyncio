@@ -52,9 +52,10 @@ struct generator {
       return my_suspend_always{};
     }
     template <typename... Args>
-    void *operator new(size_t size, Args const &...) noexcept {
+    static void *operator new(size_t size, Args const &...) noexcept {
       void *p = malloc(size);
       cout << "Allocated memory: " << p << " size: " << size << endl;
+      //      cout << "this: " << this;
       return p;
     }
 
