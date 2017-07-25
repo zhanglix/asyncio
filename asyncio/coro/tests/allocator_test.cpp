@@ -5,10 +5,10 @@
 #define ENABLE_ASYNCIO_LOG
 #include <asyncio/log.hpp>
 
-#include <asyncio/co_gen.hpp>
-#include <asyncio/coro.hpp>
-#include <asyncio/gen.hpp>
-#include <asyncio/utility.hpp>
+#include <asyncio/coro/co_gen.hpp>
+#include <asyncio/coro/coro.hpp>
+#include <asyncio/coro/gen.hpp>
+#include <asyncio/coro/utility.hpp>
 
 using namespace std;
 using namespace asyncio;

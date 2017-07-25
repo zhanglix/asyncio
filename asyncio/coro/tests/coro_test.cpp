@@ -1,16 +1,16 @@
 #include <catch.hpp>
 #include <exception>
+#include <experimental/coroutine>
 #include <functional>
 #include <future>
 #include <stdint.h>
 #include <utility>
-#include <experimental/coroutine>
 
 #define ENABLE_ASYNCIO_LOG
 #include <asyncio/log.hpp>
 
-#include <asyncio/coro.hpp>
-#include <asyncio/utility.hpp>
+#include <asyncio/coro/coro.hpp>
+#include <asyncio/coro/utility.hpp>
 
 #include "coro_test_helper.hpp"
 
@@ -243,4 +243,4 @@ TEST_CASE("exception_raised", "[exception]") {
   leak.resume_caller();
   CHECK(co.await_resume() == exception_message);
 }
-}
+} // namespace coro_test

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "coro.hpp"
+#include "coro/coro.hpp"
 
-#include "gen.hpp"
+#include "coro/gen.hpp"
 
-#include "co_gen.hpp"
+#include "coro/co_gen.hpp"
 
-#include "utility.hpp"
+#include "coro/utility.hpp"

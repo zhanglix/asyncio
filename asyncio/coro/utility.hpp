@@ -2,6 +2,9 @@
 
 #include <experimental/coroutine>
 
+#include <asyncio/common.hpp>
+#include <asyncio/log.hpp>
+
 #include "coro.hpp"
 
 BEGIN_ASYNCIO_NAMESPACE;

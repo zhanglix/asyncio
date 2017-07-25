@@ -7,8 +7,8 @@
 #define ENABLE_ASYNCIO_LOG
 #include <asyncio/log.hpp>
 
-#include <asyncio/coro.hpp>
-#include <asyncio/utility.hpp>
+#include <asyncio/coro/coro.hpp>
+#include <asyncio/coro/utility.hpp>
 
 using namespace std;
 

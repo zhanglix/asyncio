@@ -11,7 +11,7 @@
 #   suspendable.hpp #suspendable.cpp
 #   coro.hpp
 #   )
-add_subdirectory (tests) 
+add_subdirectory (coro) 
 add_subdirectory(examples)
 
 

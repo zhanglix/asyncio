@@ -1,8 +1,8 @@
 #include <catch.hpp>
 #include <vector>
 
-#include <asyncio/coro.hpp>
-#include <asyncio/gen.hpp>
+#include <asyncio/coro/coro.hpp>
+#include <asyncio/coro/gen.hpp>
 #include <exception>
 
 using namespace std;
