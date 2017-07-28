@@ -1,6 +1,6 @@
 add_executable(
   asyncio_test 
-  do_test.cpp
+  ../../do_test.cpp
   coro_test.cpp
   std_promise_test.cpp
   utility_test.cpp
