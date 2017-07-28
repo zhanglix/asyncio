@@ -19,6 +19,8 @@ TEST_CASE("TimerHandle", "[loop]") {
     CHECK(handle.loopCore() == &loop);
     CHECK(handle.data() == (void *)&mockLoop);
     CHECK(handle.refCount() == 1);
+    CHECK(handle.getState() == TimerHandle::State::READY);
+    CHECK_FALSE(handle.completed());
   }
   SECTION("addRef") {
     handle.addRef();
@@ -60,5 +62,21 @@ TEST_CASE("TimerHandle", "[loop]") {
   SECTION("cancel return false") {
     When(Method(mockLoop, cancelTimer)).Return(false);
     CHECK_FALSE(handle.cancel());
+  }
+
+  SECTION("reset") {
+    handle.setState(TimerHandle::State::FINISHED);
+    handle.addRef();
+    REQUIRE(handle.getState() == TimerHandle::State::FINISHED);
+    handle.reset(&handle);
+    CHECK(handle.loopCore() == &loop);
+    CHECK(handle.data() == &handle);
+    CHECK(handle.refCount() == 1);
+    CHECK(handle.getState() == TimerHandle::State::READY);
+  }
+  SECTION("completed") {
+    SECTION("finished") { handle.setState(TimerHandle::State::FINISHED); }
+    SECTION("canceled") { handle.setState(TimerHandle::State::CANCELED); }
+    CHECK(handle.completed());
   }
 }
