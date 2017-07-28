@@ -21,13 +21,15 @@ public:
   void addRef() { ++_refCount; }
   void subRef() {
     if (--_refCount == 0) {
-      _loopCore->recycle(this);
+      _loopCore->recycleTimerHandle(this);
     }
   }
 
   void subRefThreadSafe() {
     (void)_loopCore->callSoonThreadSafe(subRefOnLoop, this);
   }
+
+  bool cancel() { return _loopCore->cancelTimer(this); }
 
   void setLoopCore(LoopCore *lc) { _loopCore = lc; }
   void setData(void *data) { _data = data; }

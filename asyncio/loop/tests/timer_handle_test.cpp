@@ -11,7 +11,7 @@ using namespace std;
 TEST_CASE("TimerHandle", "[loop]") {
   Mock<LoopCore> mockLoop;
   When(Method(mockLoop, callSoonThreadSafe)).Return(nullptr);
-  Fake(Method(mockLoop, recycle));
+  Fake(Method(mockLoop, recycleTimerHandle));
 
   LoopCore &loop = mockLoop.get();
   TimerHandle handle(&loop, &mockLoop);
@@ -28,9 +28,10 @@ TEST_CASE("TimerHandle", "[loop]") {
       CHECK(handle.refCount() == 1);
     }
   }
+
   SECTION("subRef to zero") {
     handle.subRef();
-    Verify(Method(mockLoop, recycle).Using(&handle)).Once();
+    Verify(Method(mockLoop, recycleTimerHandle).Using(&handle)).Once();
   }
 
   SECTION("subRefThreadSafe") {
@@ -48,5 +49,16 @@ TEST_CASE("TimerHandle", "[loop]") {
     TimerHandle::subRefOnLoop(&another);
     CHECK(handle.refCount() == 1);
     CHECK(another.refCount() == 1);
+  }
+
+  SECTION("cancel return true") {
+    When(Method(mockLoop, cancelTimer)).Return(true);
+    CHECK(handle.cancel());
+    Verify(Method(mockLoop, cancelTimer).Using(&handle)).Once();
+  }
+
+  SECTION("cancel return false") {
+    When(Method(mockLoop, cancelTimer)).Return(false);
+    CHECK_FALSE(handle.cancel());
   }
 }
