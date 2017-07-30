@@ -19,12 +19,29 @@ public:
   virtual void runUntilComplete(FutureBase *future);
 
   template <class F, class... Args> auto callSoon(F &&f, Args &&... args) {
+    return callLater(0, std::forward<F>(f), std::forward<Args>(args)...);
+  }
+
+  template <class F, class... Args>
+  auto callSoonThreadSafe(F &&f, Args &&... args) {
+    typedef typename std::result_of<F(Args...)>::type R;
+    auto call = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
+    auto timerFuture = new TimerFutureThreadSafe<R, decltype(call)>(call);
+    auto handle = _lc->callSoon(timerFuture->callback, timerFuture);
+    timerFuture->setHandle(handle);
+    return timerFuture;
+  }
+
+  template <class F, class... Args>
+  auto callLater(uint64_t milliseconds, F &&f, Args &&... args) {
     typedef typename std::result_of<F(Args...)>::type R;
     auto call = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
     auto timerFuture = new TimerFuture<R, decltype(call)>(call);
-    auto handle = _lc->callSoon(timerFuture->callback, timerFuture);
+    auto handle =
+        milliseconds > 0
+            ? _lc->callLater(milliseconds, timerFuture->callback, timerFuture)
+            : _lc->callSoon(timerFuture->callback, timerFuture);
     timerFuture->setHandle(handle);
-    handle->addRef();
     return timerFuture;
   }
 

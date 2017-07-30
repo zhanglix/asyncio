@@ -62,10 +62,25 @@ public:
     (*timerFuture)();
   }
 
-private:
+protected:
   std::promise<R> _promise;
   std::future<R> _future;
   F _f;
   TimerHandle *_handle;
 };
+
+template <class R, class F>
+class TimerFutureThreadSafe : public TimerFuture<R, F> {
+public:
+  TimerFutureThreadSafe(F &f) : TimerFuture<R, F>(f) {}
+  void release() override {
+    this->_handle->loopCore()->callSoonThreadSafe(subRefOnLoop, this);
+  }
+  static void subRefOnLoop(TimerHandle *handle) {
+    auto fut = (TimerFuture<R, F> *)(handle->data());
+    fut->TimerFuture<R, F>::release();
+    handle->subRef();
+  }
+};
+
 END_ASYNCIO_NAMESPACE;

@@ -39,14 +39,17 @@ TimerHandle *TrivialLoop::callSoon(TimerCallback callback, void *data) {
   _timers.push_back(handle);
   return handle;
 }
+
 TimerHandle *TrivialLoop::callSoonThreadSafe(TimerCallback callback,
                                              void *data) {
-  return nullptr;
+  return callSoon(callback, data);
 }
+
 TimerHandle *TrivialLoop::callLater(uint64_t milliseconds,
                                     TimerCallback callback, void *data) {
-  return nullptr;
+  return callSoon(callback, data);
 }
+
 bool TrivialLoop::cancelTimer(TimerHandle *handle) {
   for (auto iter = _timers.begin(); iter != _timers.end(); iter++) {
     if (*iter == handle) {
