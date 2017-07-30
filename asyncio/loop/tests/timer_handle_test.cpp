@@ -23,10 +23,10 @@ TEST_CASE("TimerHandle", "[loop]") {
     CHECK_FALSE(handle.completed());
   }
   SECTION("addRef") {
-    handle.addRef();
+    CHECK(handle.addRef() == 2);
     CHECK(handle.refCount() == 2);
     SECTION("subRef") {
-      handle.subRef();
+      CHECK(handle.subRef() == 1);
       CHECK(handle.refCount() == 1);
     }
   }

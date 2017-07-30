@@ -11,6 +11,7 @@ BEGIN_ASYNCIO_NAMESPACE;
 class TimerHandle {
 public:
   enum State { READY = 0, FINISHED, CANCELED };
+
   TimerHandle(LoopCore *lc, void *data)
       : _loopCore(lc), _data(data), _refCount(1), _state(READY) {}
   TimerHandle() : TimerHandle(nullptr, nullptr) {}
@@ -19,10 +20,13 @@ public:
   LoopCore *loopCore() const { return _loopCore; }
   size_t refCount() const { return _refCount; }
 
-  void addRef() { ++_refCount; }
-  void subRef() {
+  size_t addRef() { return ++_refCount; }
+  size_t subRef() {
     if (--_refCount == 0) {
       _loopCore->recycleTimerHandle(this);
+      return 0;
+    } else {
+      return _refCount;
     }
   }
 
@@ -42,6 +46,8 @@ public:
     _refCount = 1;
     _state = State::READY;
   }
+
+  virtual ~TimerHandle() {}
 
   static void subRefOnLoop(TimerHandle *handle);
 
