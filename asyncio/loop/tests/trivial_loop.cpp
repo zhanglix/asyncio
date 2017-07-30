@@ -1,7 +1,10 @@
-#include "trivial_loop.hpp"
-#include "../loop_exception.hpp"
-
 #include <sstream>
+
+#include "../loop_exception.hpp"
+#include "trivial_loop.hpp"
+
+#define ENABLE_ASYNCIO_LOG
+#include <asyncio/log.hpp>
 
 using namespace std;
 
@@ -27,6 +30,7 @@ void TrivialLoop::close() {
 size_t TrivialLoop::activeHandlesCount() { return _timers.size(); }
 uint64_t TrivialLoop::time() { return _now; }
 TimerHandle *TrivialLoop::callSoon(TimerCallback callback, void *data) {
+  LOG_DEBUG("call soon!");
   TrivialTimerHandle *handle = new TrivialTimerHandle;
   handle->setLoopCore(this);
   handle->setData(data);

@@ -15,12 +15,14 @@ namespace eventloop_test {
 TEST_CASE("eventloop callsoon", "[loop]") {
   TrivialLoop trivialLoop;
   Mock<LoopCore> spy(trivialLoop);
+  Spy(Method(spy, callSoon));
   LoopCore *lc = &spy.get();
   EventLoop loop(lc);
 
   SECTION("int") {
     auto fut = loop.callSoon([](int in) { return in; }, 3);
-    REQUIRE_FALSE(fut->completed());
+    CHECK_FALSE(fut->completed());
+    Verify(Method(spy, callSoon)).Once();
     SECTION("done") {
       lc->runOneIteration();
       CHECK(fut->completed());
@@ -38,6 +40,8 @@ TEST_CASE("eventloop callsoon", "[loop]") {
     int out = 0;
     auto fut = loop.callSoon([](int in, int &out) { out = in; }, 3, ref(out));
     CHECK_FALSE(fut->completed());
+    Verify(Method(spy, callSoon)).Once();
+
     SECTION("done") {
       lc->runOneIteration();
       CHECK(fut->completed());
