@@ -40,7 +40,31 @@ TEST_CASE("uv_loop ", "[uv]") {
     CHECK(uv_run(&uv_loop, UV_RUN_ONCE) == 0);
   }
 
-  SECTION("timer") { CHECK(false); }
+  SECTION("timer") {
+    uv_timer_t uv_timer;
+    auto callback = [](uv_timer_t *handle) { handle->data = handle; };
+    REQUIRE(uv_timer_init(&uv_loop, &uv_timer) == 0);
+    SECTION("not started") {
+      timeout = uv_backend_timeout(&uv_loop);
+      REQUIRE(timeout == 0);
+      CHECK(uv_run(&uv_loop, UV_RUN_ONCE) == 0);
+    }
+    SECTION("start soon") {
+      CHECK(!uv_timer_start(&uv_timer, callback, 0, 0));
+      CHECK(uv_backend_timeout(&uv_loop) == 0);
+      CHECK(uv_run(&uv_loop, UV_RUN_ONCE) == 0);
+      CHECK(uv_timer.data == &uv_timer);
+    }
+    SECTION("start soon") {
+      CHECK(!uv_timer_start(&uv_timer, callback, 10, 0));
+      CHECK(uv_backend_timeout(&uv_loop) == 10);
+      CHECK(uv_run(&uv_loop, UV_RUN_ONCE) == 0);
+      CHECK(uv_timer.data == &uv_timer);
+    }
+
+    uv_close((uv_handle_t *)(&uv_timer), nullptr);
+    CHECK(uv_run(&uv_loop, UV_RUN_ONCE) == 0);
+  }
 
   REQUIRE(uv_loop_close(&uv_loop) == 0);
 }
