@@ -1,5 +1,5 @@
 add_executable(
-  asyncio_test 
+  coro_test 
   ../../do_test.cpp
   coro_test.cpp
   std_promise_test.cpp
@@ -16,4 +16,4 @@ add_executable(
 # working command on linux
 # clang++ -I/usr/local/include/c++/v1 -std=c++14 -stdlib=libc++ -fcoroutines-ts -o co_drafts co_drafts.cpp  -lc++abi
 # automate build on linux later
-ParseAndAddCatchTests(asyncio_test)
+ParseAndAddCatchTests(coro_test)
