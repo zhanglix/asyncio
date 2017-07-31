@@ -1,6 +1,9 @@
 #include <catch.hpp>
 #include <fakeit.hpp>
 
+#define ENABLE_ASYNCIO_LOG
+#include <asyncio/log.hpp>
+
 #include "../event_loop.hpp"
 #include "../loop_core.hpp"
 #include "../loop_exception.hpp"
@@ -16,16 +19,21 @@ TEST_CASE("eventloop timer", "[loop]") {
   TrivialLoop trivialLoop;
   Mock<LoopCore> spy(trivialLoop);
   Spy(Method(spy, callSoon));
+  Spy(Method(spy, recycleTimerHandle));
 
   LoopCore *lc = &spy.get();
   EventLoop loop(lc);
 
   SECTION("int") {
     auto fut = loop.callSoon([](int in) { return in; }, 3);
+    LOG_DEBUG("after callSoon()");
     CHECK_FALSE(fut->completed());
     Verify(Method(spy, callSoon)).Once();
     SECTION("done") {
+      LOG_DEBUG("before runOneIteration()");
       lc->runOneIteration();
+      LOG_DEBUG("after runOneIteration()");
+
       CHECK(fut->completed());
       CHECK(fut->get() == 3);
       CHECK_FALSE(fut->cancel());
@@ -35,7 +43,11 @@ TEST_CASE("eventloop timer", "[loop]") {
       CHECK(fut->completed());
       CHECK_THROWS_AS(fut->get(), FutureCanceledError);
     }
+
+    LOG_DEBUG("before fut->release()");
     REQUIRE_NOTHROW(fut->release());
+    LOG_DEBUG("after fut->release()");
+    Verify(Method(spy, recycleTimerHandle)).Once();
   }
 
   SECTION("void") {
@@ -58,6 +70,7 @@ TEST_CASE("eventloop timer", "[loop]") {
       CHECK(out == 0);
     }
     REQUIRE_NOTHROW(fut->release());
+    Verify(Method(spy, recycleTimerHandle)).Once();
   }
 
   SECTION("callLater") {
@@ -66,15 +79,27 @@ TEST_CASE("eventloop timer", "[loop]") {
     CHECK_FALSE(fut->completed());
     Verify(Method(spy, callLater)).Once();
     REQUIRE_NOTHROW(fut->release());
+    Verify(Method(spy, recycleTimerHandle)).Exactly(0);
+    lc->runOneIteration();
+    Verify(Method(spy, recycleTimerHandle)).Once();
   }
 
   SECTION("callSoonThreadSafe") {
+    LOG_DEBUG("begin callSoonThreadSafe");
     Spy(Method(spy, callSoonThreadSafe));
     auto fut = loop.callSoonThreadSafe([](int in) { return in; }, 3);
     CHECK_FALSE(fut->completed());
     Verify(Method(spy, callSoonThreadSafe)).Once();
+
+    LOG_DEBUG("before fut->release()");
     REQUIRE_NOTHROW(fut->release());
-    Verify(Method(spy, callSoonThreadSafe)).Once();
+    Verify(Method(spy, callSoonThreadSafe)).Twice();
+
+    LOG_DEBUG("before runOneIteration");
+
+    lc->runOneIteration();
+    Verify(Method(spy, recycleTimerHandle)).Twice();
+    LOG_DEBUG("end callSoonThreadSafe");
   }
 }
 } // namespace eventloop_test

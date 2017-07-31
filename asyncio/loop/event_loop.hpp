@@ -27,9 +27,8 @@ public:
     typedef typename std::result_of<F(Args...)>::type R;
     auto call = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
     auto timerFuture = new TimerFutureThreadSafe<R, decltype(call)>(call);
-    auto handle = _lc->callSoon(timerFuture->callback, timerFuture);
-    timerFuture->setHandle(handle);
-    return timerFuture;
+    auto handle = _lc->callSoonThreadSafe(timerFuture->callback, timerFuture);
+    return setupHandle(timerFuture, handle);
   }
 
   template <class F, class... Args>
@@ -41,8 +40,15 @@ public:
         milliseconds > 0
             ? _lc->callLater(milliseconds, timerFuture->callback, timerFuture)
             : _lc->callSoon(timerFuture->callback, timerFuture);
-    timerFuture->setHandle(handle);
-    return timerFuture;
+    return setupHandle(timerFuture, handle);
+  }
+
+protected:
+  template <class R, class F>
+  Future<R> *setupHandle(TimerFuture<R, F> *fut, TimerHandle *handle) {
+    fut->setHandle(handle);
+    fut->addRef();
+    return fut;
   }
 
 protected:

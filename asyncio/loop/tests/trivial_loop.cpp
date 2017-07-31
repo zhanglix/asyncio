@@ -14,6 +14,8 @@ void TrivialLoop::runOneIteration() {
   for (auto &&h : _timers) {
     (*(h->callback))(h);
     h->setState(TimerHandle::State::FINISHED);
+    LOG_DEBUG("handle({})->refCount:({}) in runOneIteration.", (void *)h,
+              h->refCount());
     h->subRef();
   }
   _timers.clear();
@@ -37,6 +39,7 @@ TimerHandle *TrivialLoop::callSoon(TimerCallback callback, void *data) {
   handle->callback = callback;
   handle->addRef();
   _timers.push_back(handle);
+  LOG_DEBUG("handle({})->refCount:({})", (void *)handle, handle->refCount());
   return handle;
 }
 
