@@ -13,8 +13,9 @@
 
 BEGIN_ASYNCIO_NAMESPACE;
 
-template <class R, class F> class TimerFuture : public Future<R> {
+template <class R> class TimerFuture : public Future<R> {
 public:
+  typedef std::function<R(void)> F;
   TimerFuture(F &f) : _f(f), _handle(nullptr), _refCount(1) {
     _future = std::move(_promise.get_future());
   }
@@ -63,7 +64,7 @@ public:
     subRef();
   }
   static void callback(TimerHandle *handle) {
-    auto timerFuture = (TimerFuture<R, F> *)(handle->data());
+    auto timerFuture = (TimerFuture<R> *)(handle->data());
     (*timerFuture)();
   }
 
@@ -87,18 +88,19 @@ protected:
   size_t _refCount;
 };
 
-template <class R, class F>
-class TimerFutureThreadSafe : public TimerFuture<R, F> {
+template <class R> class TimerFutureThreadSafe : public TimerFuture<R> {
 public:
-  TimerFutureThreadSafe(F &f) : TimerFuture<R, F>(f) {}
+  using typename TimerFuture<R>::F;
+  TimerFutureThreadSafe(F &f) : TimerFuture<R>(f) {}
   void release() override {
     this->_handle->loopCore()->callSoonThreadSafe(subRefOnLoop, this);
   }
   static void subRefOnLoop(TimerHandle *handle) {
-    auto fut = (TimerFuture<R, F> *)(handle->data());
-    fut->TimerFuture<R, F>::release();
+    auto fut = (TimerFuture<R> *)(handle->data());
+    fut->TimerFuture<R>::release();
     handle->subRef();
   }
 };
 
 END_ASYNCIO_NAMESPACE;
+;

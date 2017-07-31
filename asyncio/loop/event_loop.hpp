@@ -19,36 +19,52 @@ public:
   virtual void runUntilComplete(FutureBase *future);
 
   template <class F, class... Args> auto callSoon(F &&f, Args &&... args) {
-    return callLater(0, std::forward<F>(f), std::forward<Args>(args)...);
+    return callOnTimer<false, F, Args...>(0, std::forward<F>(f),
+                                          std::forward<Args>(args)...);
   }
 
   template <class F, class... Args>
   auto callSoonThreadSafe(F &&f, Args &&... args) {
-    typedef typename std::result_of<F(Args...)>::type R;
-    auto call = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
-    auto timerFuture = new TimerFutureThreadSafe<R, decltype(call)>(call);
-    auto handle = _lc->callSoonThreadSafe(timerFuture->callback, timerFuture);
-    return setupHandle(timerFuture, handle);
+    return callOnTimer<true, F, Args...>(0, std::forward<F>(f),
+                                         std::forward<Args>(args)...);
   }
 
   template <class F, class... Args>
   auto callLater(uint64_t milliseconds, F &&f, Args &&... args) {
-    typedef typename std::result_of<F(Args...)>::type R;
-    auto call = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
-    auto timerFuture = new TimerFuture<R, decltype(call)>(call);
-    auto handle =
-        milliseconds > 0
-            ? _lc->callLater(milliseconds, timerFuture->callback, timerFuture)
-            : _lc->callSoon(timerFuture->callback, timerFuture);
-    return setupHandle(timerFuture, handle);
+    return callOnTimer<false, F, Args...>(milliseconds, std::forward<F>(f),
+                                          std::forward<Args>(args)...);
+  }
+
+  template <bool threadSafe, class F, class... Args>
+  auto callOnTimer(uint64_t milliseconds, F &&f, Args &&... args) {
+    using R = typename std::result_of<F(Args...)>::type;
+    using FutureType = std::conditional_t<threadSafe, TimerFutureThreadSafe<R>,
+                                          TimerFuture<R>>;
+    std::function<R(void)> call =
+        std::bind(std::forward<F>(f), std::forward<Args>(args)...);
+
+    auto timerFuture = new FutureType(call);
+    setupFuture<threadSafe, FutureType>(timerFuture, milliseconds);
+    return timerFuture;
   }
 
 protected:
-  template <class R, class F>
-  Future<R> *setupHandle(TimerFuture<R, F> *fut, TimerHandle *handle) {
+  template <bool threadSafe, class Fut>
+  std::enable_if_t<threadSafe> setupFuture(Fut *fut, uint64_t) {
+    auto handle = _lc->callSoonThreadSafe(fut->callback, fut);
+    setupHandle(fut, handle);
+  }
+
+  template <bool threadSafe, class Fut>
+  std::enable_if_t<!threadSafe> setupFuture(Fut *fut, uint64_t ms) {
+    auto handle = ms > 0 ? _lc->callLater(ms, fut->callback, fut)
+                         : _lc->callSoon(fut->callback, fut);
+    setupHandle(fut, handle);
+  }
+
+  template <class Fut> void setupHandle(Fut *fut, TimerHandle *handle) {
     fut->setHandle(handle);
     fut->addRef();
-    return fut;
   }
 
 protected:
