@@ -14,12 +14,12 @@ TEST_CASE("TimerHandle", "[loop]") {
   Fake(Method(mockLoop, recycleTimerHandle));
 
   LoopCore &loop = mockLoop.get();
-  TimerHandle handle(&loop, &mockLoop);
+  DefaultTimerHandle handle(&loop, &mockLoop);
   SECTION("initial state") {
     CHECK(handle.loopCore() == &loop);
     CHECK(handle.data() == (void *)&mockLoop);
     CHECK(handle.refCount() == 1);
-    CHECK(handle.getState() == TimerHandle::State::READY);
+    CHECK(handle.getState() == DefaultTimerHandle::State::READY);
     CHECK_FALSE(handle.completed());
   }
   SECTION("addRef") {
@@ -39,16 +39,16 @@ TEST_CASE("TimerHandle", "[loop]") {
   SECTION("subRefThreadSafe") {
     handle.subRefThreadSafe();
     Verify(Method(mockLoop, callSoonThreadSafe)
-               .Using(TimerHandle::subRefOnLoop, &handle))
+               .Using(DefaultTimerHandle::subRefOnLoop, &handle))
         .Once();
   }
 
   SECTION("subRefOnLoop") {
-    TimerHandle another;
+    DefaultTimerHandle another;
     another.setData(&handle);
     another.addRef(); // 2 ref now
     handle.addRef();  // 2 ref now
-    TimerHandle::subRefOnLoop(&another);
+    DefaultTimerHandle::subRefOnLoop(&another);
     CHECK(handle.refCount() == 1);
     CHECK(another.refCount() == 1);
   }
@@ -65,18 +65,22 @@ TEST_CASE("TimerHandle", "[loop]") {
   }
 
   SECTION("reset") {
-    handle.setState(TimerHandle::State::FINISHED);
+    handle.setState(DefaultTimerHandle::State::FINISHED);
     handle.addRef();
-    REQUIRE(handle.getState() == TimerHandle::State::FINISHED);
+    REQUIRE(handle.getState() == DefaultTimerHandle::State::FINISHED);
     handle.reset(&handle);
     CHECK(handle.loopCore() == &loop);
     CHECK(handle.data() == &handle);
     CHECK(handle.refCount() == 1);
-    CHECK(handle.getState() == TimerHandle::State::READY);
+    CHECK(handle.getState() == DefaultTimerHandle::State::READY);
   }
   SECTION("completed") {
-    SECTION("finished") { handle.setState(TimerHandle::State::FINISHED); }
-    SECTION("canceled") { handle.setState(TimerHandle::State::CANCELED); }
+    SECTION("finished") {
+      handle.setState(DefaultTimerHandle::State::FINISHED);
+    }
+    SECTION("canceled") {
+      handle.setState(DefaultTimerHandle::State::CANCELED);
+    }
     CHECK(handle.completed());
   }
 }

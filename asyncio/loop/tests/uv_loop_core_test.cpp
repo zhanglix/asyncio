@@ -26,7 +26,7 @@ TEST_CASE("uv_loop_core", "[loop]") {
     }
     SECTION("ThreadSafe") {
       handle = lc->callSoonThreadSafe(callback, data);
-      REQUIRE(dynamic_cast<UVASyncHandle *>(handle));
+      REQUIRE(dynamic_cast<UVASyncTimerHandle *>(handle));
     }
     CHECK(handle->data() == data);
     lc->runOneIteration();
@@ -43,7 +43,7 @@ TEST_CASE("uv_loop_core", "[loop]") {
     }
     SECTION("ThreadSafe") {
       handle = lc->callSoonThreadSafe(callback, data);
-      REQUIRE(dynamic_cast<UVASyncHandle *>(handle));
+      REQUIRE(dynamic_cast<UVASyncTimerHandle *>(handle));
     }
     CHECK(handle->cancel());
     CHECK(handle->data() == data);

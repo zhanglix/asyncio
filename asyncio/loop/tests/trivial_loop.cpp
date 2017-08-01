@@ -13,7 +13,7 @@ void TrivialLoop::runOneIteration() {
   _now += 1;
   for (auto &&h : _timers) {
     (*(h->callback))(h);
-    h->setState(TimerHandle::State::FINISHED);
+    h->setState(DefaultTimerHandle::State::FINISHED);
     LOG_DEBUG("handle({})->refCount:({}) in runOneIteration.", (void *)h,
               h->refCount());
     h->subRef();
@@ -53,10 +53,11 @@ TimerHandle *TrivialLoop::callLater(uint64_t milliseconds,
   return callSoon(callback, data);
 }
 
-bool TrivialLoop::cancelTimer(TimerHandle *handle) {
+bool TrivialLoop::cancelTimer(TimerHandle *h) {
+  auto handle = (TrivialTimerHandle *)h;
   for (auto iter = _timers.begin(); iter != _timers.end(); iter++) {
     if (*iter == handle) {
-      handle->setState(TimerHandle::State::CANCELED);
+      handle->setState(DefaultTimerHandle::State::CANCELED);
       handle->subRef();
       _timers.erase(iter);
       return true;

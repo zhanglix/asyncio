@@ -1,16 +1,16 @@
-#pragma once
-#include <vector>
 
-#include "../loop_core.hpp"
-#include "../timer_handle.hpp"
 #include <asyncio/common.hpp>
+
+#include "loop_core.hpp"
 
 BEGIN_ASYNCIO_NAMESPACE;
 
-class TrivialLoop : public LoopCore {
+class UVLoopCore : public LoopCore {
 public:
-  TrivialLoop() : _now(0) {}
-  virtual ~TrivialLoop() {}
+  UVLoopCore();
+  UVLoopCore(uv_loop_t *uvLoop);
+
+  virtual ~UVLoopCore() {}
   virtual void runOneIteration() override;
   virtual void close() override;
   virtual size_t activeHandlesCount() override;
@@ -24,11 +24,7 @@ public:
   virtual void recycleTimerHandle(TimerHandle *handle) override;
 
 private:
-  class TrivialTimerHandle : public DefaultTimerHandle {
-  public:
-    TimerCallback callback;
-  };
-  std::vector<TrivialTimerHandle *> _timers;
-  uint64_t _now;
+  uv_loop_t *_loop;
+  bool _owner;
 };
 END_ASYNCIO_NAMESPACE;

@@ -4,8 +4,8 @@
 
 BEGIN_ASYNCIO_NAMESPACE;
 
-void TimerHandle::subRefOnLoop(TimerHandle *handle) {
-  auto handleToSubRef = (TimerHandle *)handle->data();
+void DefaultTimerHandle::subRefOnLoop(TimerHandle *handle) {
+  auto handleToSubRef = (DefaultTimerHandle *)handle->data();
   handleToSubRef->subRef();
   handle->subRef();
 }
