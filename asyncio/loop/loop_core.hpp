@@ -19,8 +19,6 @@ public:
                                           void *data) = 0;
   virtual TimerHandle *callLater(uint64_t milliseconds, TimerCallback callback,
                                  void *data) = 0;
-  virtual bool cancelTimer(TimerHandle *handle) = 0;
-  virtual void recycleTimerHandle(TimerHandle *handle) = 0;
 };
 
 END_ASYNCIO_NAMESPACE;

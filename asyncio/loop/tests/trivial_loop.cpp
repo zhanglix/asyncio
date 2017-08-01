@@ -13,7 +13,7 @@ void TrivialLoop::runOneIteration() {
   _now += 1;
   for (auto &&h : _timers) {
     (*(h->callback))(h);
-    h->setState(DefaultTimerHandle::State::FINISHED);
+    h->setState(TrivialTimerHandle::State::FINISHED);
     LOG_DEBUG("handle({})->refCount:({}) in runOneIteration.", (void *)h,
               h->refCount());
     h->subRef();
@@ -33,8 +33,7 @@ size_t TrivialLoop::activeHandlesCount() { return _timers.size(); }
 uint64_t TrivialLoop::time() { return _now; }
 TimerHandle *TrivialLoop::callSoon(TimerCallback callback, void *data) {
   LOG_DEBUG("call soon!");
-  TrivialTimerHandle *handle = new TrivialTimerHandle;
-  handle->setLoopCore(this);
+  TrivialTimerHandle *handle = new TrivialTimerHandle(this);
   handle->setData(data);
   handle->callback = callback;
   handle->addRef();
@@ -53,11 +52,10 @@ TimerHandle *TrivialLoop::callLater(uint64_t milliseconds,
   return callSoon(callback, data);
 }
 
-bool TrivialLoop::cancelTimer(TimerHandle *h) {
-  auto handle = (TrivialTimerHandle *)h;
+bool TrivialLoop::cancelTimer(TrivialTimerHandle *handle) {
   for (auto iter = _timers.begin(); iter != _timers.end(); iter++) {
     if (*iter == handle) {
-      handle->setState(DefaultTimerHandle::State::CANCELED);
+      handle->setState(TrivialTimerHandle::State::CANCELED);
       handle->subRef();
       _timers.erase(iter);
       return true;
@@ -65,7 +63,5 @@ bool TrivialLoop::cancelTimer(TimerHandle *h) {
   }
   return false;
 }
-
-void TrivialLoop::recycleTimerHandle(TimerHandle *handle) { delete handle; }
 
 END_ASYNCIO_NAMESPACE;

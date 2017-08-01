@@ -17,7 +17,7 @@ namespace eventloop_test {
 
 TEST_CASE("eventloop timer", "[loop]") {
   TrivialLoop trivialLoop;
-  Mock<LoopCore> spy(trivialLoop);
+  Mock<TrivialLoop> spy(trivialLoop);
   Spy(Method(spy, callSoon));
   Spy(Method(spy, recycleTimerHandle));
 
