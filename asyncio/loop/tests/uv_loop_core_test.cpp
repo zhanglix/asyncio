@@ -10,81 +10,48 @@ using namespace fakeit;
 using namespace asyncio;
 namespace uv_loop_core_test {
 
-TEST_CASE("uv_loop ", "[uv]") {
+TEST_CASE("uv_loop_core", "[loop]") {
   uv_loop_t uv_loop;
   REQUIRE(uv_loop_init(&uv_loop) == 0);
-  int timeout;
-  uint64_t t0, t1;
-  SECTION("no handles") {
-    timeout = uv_backend_timeout(&uv_loop);
-    CHECK(timeout == 0);
-    t0 = uv_now(&uv_loop);
-    REQUIRE(uv_run(&uv_loop, UV_RUN_ONCE) == 0);
-    t1 = uv_now(&uv_loop);
-    // CHECK(t1 - t0 == timeout);
-  }
-
-  SECTION("async") {
-    uv_async_t uv_async;
-    auto callback = [](uv_async_t *handle) { handle->data = handle; };
-    REQUIRE(uv_async_init(&uv_loop, &uv_async, callback) == 0);
-    timeout = uv_backend_timeout(&uv_loop);
-    REQUIRE(timeout == -1);
-    REQUIRE(uv_async_send(&uv_async) == 0);
-    t0 = uv_now(&uv_loop);
-    CHECK(uv_run(&uv_loop, UV_RUN_ONCE) == 1);
-    t1 = uv_now(&uv_loop);
-    //    CHECK(t1 - t0 > 0);
-    CHECK(uv_async.data == &uv_async);
-    uv_close((uv_handle_t *)(&uv_async), nullptr);
-    CHECK(uv_run(&uv_loop, UV_RUN_ONCE) == 0);
-  }
-
-  SECTION("timer") {
-    uv_timer_t uv_timer;
-    auto callback = [](uv_timer_t *handle) { handle->data = handle; };
-    REQUIRE(uv_timer_init(&uv_loop, &uv_timer) == 0);
-    SECTION("not started") {
-      timeout = uv_backend_timeout(&uv_loop);
-      REQUIRE(timeout == 0);
-      CHECK(uv_run(&uv_loop, UV_RUN_ONCE) == 0);
+  UVLoopCore uvlc(&uv_loop);
+  LoopCore *lc = &uvlc;
+  void *data = (void *)0xabcd;
+  auto callback = [](TimerHandle *h) { h->setData(h); };
+  SECTION("finished") {
+    TimerHandle *handle;
+    SECTION("simple") {
+      SECTION("soon") { handle = lc->callSoon(callback, data); }
+      SECTION("later") { handle = lc->callLater(10, callback, data); }
+      REQUIRE(dynamic_cast<UVTimerHandle *>(handle));
     }
-    SECTION("start soon") {
-      CHECK(!uv_timer_start(&uv_timer, callback, 0, 0));
-      CHECK(uv_backend_timeout(&uv_loop) == 0);
-      CHECK(uv_run(&uv_loop, UV_RUN_ONCE) == 0);
-      CHECK(uv_timer.data == &uv_timer);
+    SECTION("ThreadSafe") {
+      handle = lc->callSoonThreadSafe(callback, data);
+      REQUIRE(dynamic_cast<UVASyncHandle *>(handle));
     }
-    SECTION("start soon") {
-      CHECK(!uv_timer_start(&uv_timer, callback, 10, 0));
-      CHECK(uv_backend_timeout(&uv_loop) == 10);
-      CHECK(uv_run(&uv_loop, UV_RUN_ONCE) == 0);
-      CHECK(uv_timer.data == &uv_timer);
-    }
-
-    uv_close((uv_handle_t *)(&uv_timer), nullptr);
-    CHECK(uv_run(&uv_loop, UV_RUN_ONCE) == 0);
+    CHECK(handle->data() == data);
+    lc->runOneIteration();
+    CHECK(handle->data() == handle);
+    REQUIRE_THROWS_AS(lc->close(), LoopBusyError);
+    REQUIRE_NOTHROW(handle->subRef());
   }
-
+  SECTION("canceled") {
+    TimerHandle *handle;
+    SECTION("simple") {
+      SECTION("soon") { handle = lc->callSoon(callback, data); }
+      SECTION("later") { handle = lc->callLater(10, callback, data); }
+      REQUIRE(dynamic_cast<UVTimerHandle *>(handle));
+    }
+    SECTION("ThreadSafe") {
+      handle = lc->callSoonThreadSafe(callback, data);
+      REQUIRE(dynamic_cast<UVASyncHandle *>(handle));
+    }
+    CHECK(handle->cancel());
+    CHECK(handle->data() == data);
+    REQUIRE_THROWS_AS(lc->close(), LoopBusyError);
+    REQUIRE_NOTHROW(handle->subRef());
+  }
+  REQUIRE_NOTHROW(lc->close());
   REQUIRE(uv_loop_close(&uv_loop) == 0);
-}
-
-TEST_CASE("uv_loop_core", "[loop]") {
-
-  // UVLoopCore uvlc(&uv_loop);
-  // LoopCore *lc = &uvlc;
-  // TimerHandle *handleReceived = nullptr;
-  // auto callback = [](TimerHandle *h) {
-  //   auto d = (void **)(h->data());
-  //   *d = h;
-  // };
-  // SECTION("callSoon") {
-  //   TimerHandle *handle = lc->callSoon(callback, &handleReceived);
-  //   REQUIRE(handleReceived == nullptr);
-  //   lc->runOneIteration();
-  //   CHECK(handle == handleReceived);
-  //   REQUIRE_NOTHROW(handle->subRef());
-  // }
-}
+} // namespace uv_loop_core_test
 
 } // namespace uv_loop_core_test

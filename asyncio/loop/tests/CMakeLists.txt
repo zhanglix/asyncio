@@ -5,7 +5,7 @@ add_executable(
   parameter_pack_test.cpp
   event_loop_test.cpp
   trivial_loop.hpp trivial_loop.cpp
-  spy_test.cpp
+  spy_test.cpp uv_test.cpp
   uv_loop_core_test.cpp
   )
   
