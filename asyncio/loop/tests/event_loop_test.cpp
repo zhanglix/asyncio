@@ -87,18 +87,16 @@ TEST_CASE("eventloop timer", "[loop]") {
   SECTION("callSoonThreadSafe") {
     LOG_DEBUG("begin callSoonThreadSafe");
     Spy(Method(spy, callSoonThreadSafe));
-    auto fut = loop.callSoonThreadSafe([](int in) { return in; }, 3);
+    TimerFutureThreadSafe<int> *fut =
+        loop.callSoonThreadSafe([](int in) { return in; }, 3);
     CHECK_FALSE(fut->completed());
     Verify(Method(spy, callSoonThreadSafe)).Once();
 
     LOG_DEBUG("before fut->release()");
     REQUIRE_NOTHROW(fut->release());
-    Verify(Method(spy, callSoonThreadSafe)).Twice();
-
-    LOG_DEBUG("before runOneIteration");
-
+    Verify(Method(spy, recycleTimerHandle)).Exactly(0);
     lc->runOneIteration();
-    Verify(Method(spy, recycleTimerHandle)).Twice();
+    Verify(Method(spy, recycleTimerHandle)).Once();
     LOG_DEBUG("end callSoonThreadSafe");
   }
 }

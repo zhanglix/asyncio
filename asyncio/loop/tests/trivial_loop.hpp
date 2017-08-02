@@ -25,7 +25,6 @@ public:
   virtual bool cancelTimer(TrivialTimerHandle *handle);
   virtual void recycleTimerHandle(TrivialTimerHandle *handle) { delete handle; }
 
-  // DefautTimerHandle To be deleted!
   class TrivialTimerHandle : public TimerHandle {
   public:
     enum State { READY = 0, FINISHED, CANCELED };
@@ -33,8 +32,6 @@ public:
     TrivialTimerHandle(TrivialLoop *lc, void *data)
         : TimerHandle(data), _loop(lc), _state(READY) {}
     TrivialTimerHandle(TrivialLoop *lc) : TrivialTimerHandle(lc, nullptr) {}
-
-    virtual LoopCore *loopCore() const override { return _loop; }
 
     virtual void recycle() override { _loop->recycleTimerHandle(this); }
 

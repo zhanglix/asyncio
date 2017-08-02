@@ -5,7 +5,7 @@
 USING_ASYNNCIO_NAMESPACE;
 
 UVTimerHandle::UVTimerHandle(UVLoopCore *lc, TimerCallback callback, void *data)
-    : UVTimerHandleBase(lc, callback, data) {
+    : UVTimerHandleBase(callback, data), _loop(lc) {
   _uv_timer = new uv_timer_t;
   _loop->addHandle();
   uvTimerInit();

@@ -16,8 +16,6 @@ public:
   void *data() const { return _data; }
   void setData(void *data) { _data = data; }
 
-  virtual LoopCore *loopCore() const = 0;
-
   virtual size_t refCount() const { return _refCount; }
   virtual size_t addRef() { return ++_refCount; }
   virtual size_t subRef() {

@@ -9,13 +9,11 @@ BEGIN_ASYNCIO_NAMESPACE;
 
 class UVTimerHandleBase : public TimerHandle {
 public:
-  UVTimerHandleBase(UVLoopCore *lc, TimerCallback callback, void *data)
-      : TimerHandle(data), _loop(lc), _callback(callback) {}
-  LoopCore *loopCore() const override { return _loop; }
+  UVTimerHandleBase(TimerCallback callback, void *data)
+      : TimerHandle(data), _callback(callback) {}
   virtual void runCallBack() { (*_callback)(this); }
 
 protected:
-  UVLoopCore *_loop;
   TimerCallback _callback;
 };
 
@@ -35,15 +33,16 @@ public:
   void setupTimer(uint64_t later);
   void completeTimer();
 
-private:
+protected:
+  UVLoopCore *_loop;
   uv_timer_t *_uv_timer;
   bool _completed;
 };
 
 class UVASyncTimerHandle : public UVTimerHandleBase {
 public:
-  UVASyncTimerHandle(UVLoopCore *lc, TimerCallback callback, void *data)
-      : UVTimerHandleBase(lc, callback, data) {}
+  UVASyncTimerHandle(TimerCallback callback, void *data)
+      : UVTimerHandleBase(callback, data) {}
 
   bool completed() override;
   bool cancel() override;

@@ -70,8 +70,8 @@ public:
 
   size_t refCount() const { return _refCount; }
 
-  size_t addRef() { return ++_refCount; }
-  size_t subRef() {
+  virtual size_t addRef() { return ++_refCount; }
+  virtual size_t subRef() {
     if (--_refCount == 0) {
       delete this;
       return 0;
@@ -92,14 +92,18 @@ template <class R> class TimerFutureThreadSafe : public TimerFuture<R> {
 public:
   using typename TimerFuture<R>::F;
   TimerFutureThreadSafe(F &f) : TimerFuture<R>(f) {}
-  void release() override {
-    this->_handle->loopCore()->callSoonThreadSafe(subRefOnLoop, this);
+
+  virtual size_t addRef() override {
+    std::lock_guard<std::mutex> lock(_mutex);
+    return TimerFuture<R>::addRef();
   }
-  static void subRefOnLoop(TimerHandle *handle) {
-    auto fut = (TimerFuture<R> *)(handle->data());
-    fut->TimerFuture<R>::release();
-    handle->subRef();
+  virtual size_t subRef() override {
+    std::lock_guard<std::mutex> lock(_mutex);
+    return TimerFuture<R>::subRef();
   }
+
+protected:
+  std::mutex _mutex;
 };
 
 END_ASYNCIO_NAMESPACE;
