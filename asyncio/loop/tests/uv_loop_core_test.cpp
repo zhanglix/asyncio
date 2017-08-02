@@ -4,7 +4,9 @@
 
 #include <uv.h>
 
-#include "../loop_core.hpp"
+#include "../loop_exception.hpp"
+#include "../uv_loop_core.hpp"
+#include "../uv_timer_handle.hpp"
 
 using namespace fakeit;
 using namespace asyncio;

@@ -36,7 +36,7 @@ public:
 
     virtual LoopCore *loopCore() const override { return _loop; }
 
-    virtual void release() override { _loop->recycleTimerHandle(this); }
+    virtual void recycle() override { _loop->recycleTimerHandle(this); }
 
     bool cancel() override { return _loop->cancelTimer(this); }
     bool completed() override { return _state != State::READY; }

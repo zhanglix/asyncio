@@ -23,11 +23,11 @@ public:
   virtual size_t subRef() {
     size_t refs = --_refCount;
     if (refs == 0) {
-      release();
+      recycle();
     }
     return refs;
   }
-  virtual void release() { delete this; }
+  virtual void recycle() { delete this; }
 
   virtual bool completed() = 0;
   virtual bool cancel() = 0;

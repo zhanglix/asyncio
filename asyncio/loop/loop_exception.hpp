@@ -22,6 +22,7 @@ public:
 
 class LoopBusyError : public LoopException {
 public:
+  LoopBusyError() : LoopBusyError("Loop Busy!") {}
   explicit LoopBusyError(const std::string &what_arg)
       : LoopException(what_arg) {}
   explicit LoopBusyError(const char *what_arg) : LoopException(what_arg) {}
