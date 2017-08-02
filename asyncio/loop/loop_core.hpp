@@ -4,10 +4,10 @@
 
 BEGIN_ASYNCIO_NAMESPACE;
 class TimerHandle;
+typedef void (*TimerCallback)(TimerHandle *);
+
 class LoopCore {
 public:
-  typedef void (*TimerCallback)(TimerHandle *);
-
 public:
   virtual ~LoopCore() {}
   virtual void runOneIteration() = 0;

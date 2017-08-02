@@ -1,5 +1,5 @@
 #pragma once
-#include <exception>
+#include <stdexcept>
 
 #include <asyncio/common.hpp>
 

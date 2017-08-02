@@ -24,9 +24,15 @@ public:
   virtual TimerHandle *callLater(uint64_t milliseconds, TimerCallback callback,
                                  void *data) override;
 
+  uv_loop_t *getUVLoop() const { return _loop; }
+
+  size_t addHandle() { return ++_activeHandles; }
+  size_t subHandle() { return --_activeHandles; }
+
 private:
   void closeUVLoopT();
   uv_loop_t *_loop;
   bool _owner;
+  size_t _activeHandles;
 };
 END_ASYNCIO_NAMESPACE;
