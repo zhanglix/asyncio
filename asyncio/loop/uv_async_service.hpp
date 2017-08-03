@@ -28,7 +28,6 @@ public:
   void callTimers();
 
   void close();
-  void tryActive();
 
 protected:
   uv_loop_t *_uvLoop;

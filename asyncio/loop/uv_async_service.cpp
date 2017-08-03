@@ -46,6 +46,7 @@ UVASyncTimerHandle *UVAsyncService::callSoon(TimerCallback callback,
   auto handle = new UVASyncTimerHandle(this, callback, data);
   handle->addRef();
   pushTimer(handle);
+  uvAsyncSend();
   return handle;
 }
 
@@ -86,13 +87,4 @@ void UVAsyncService::close() {
     auto handle = (uv_async_t *)h;
     delete handle;
   });
-}
-
-void UVAsyncService::tryActive() {
-  if (_activeHandles > 0) {
-    uv_ref((uv_handle_t *)_uvAsync);
-    uvAsyncSend();
-  } else {
-    uv_unref((uv_handle_t *)_uvAsync);
-  }
 }
