@@ -23,7 +23,7 @@ TEST_CASE("eventloop timer", "[loop][trivial]") {
   Spy(Method(spy, recycleTimerHandle));
 
   LoopCore *lc = &spy.get();
-  EventLoop loop(lc);
+  EventLoop loop(lc, false);
 
   SECTION("int") {
     auto fut = loop.callSoon([](int in) { return in; }, 3);
@@ -103,21 +103,14 @@ TEST_CASE("eventloop timer", "[loop][trivial]") {
 }
 
 TEST_CASE("event_loop with UVLoopCore", "[examples]") {
-  UVLoopCore uvlc;
-  EventLoop loop(&uvlc);
-  SECTION("run until complete") {
-    auto fut = loop.callSoon([](int a, int b) { return a + b; }, 3, 5);
-    loop.runUntilComplete(fut);
-    CHECK(fut->get() == 8);
-    fut->release();
-  }
-
+  EventLoop loop;
+  auto fut = loop.callSoon([](int a, int b) { return a + b; }, 3, 5);
+  SECTION("run until complete") { loop.runUntilComplete(fut); }
   SECTION("run until stop called") {
-    auto fut = loop.callSoon([](int a, int b) { return a + b; }, 3, 5);
     loop.callSoon([&] { loop.stop(); })->release();
     loop.runForever();
-    CHECK(fut->get() == 8);
-    fut->release();
   }
+  CHECK(fut->get() == 8);
+  fut->release();
 }
 } // namespace eventloop_test

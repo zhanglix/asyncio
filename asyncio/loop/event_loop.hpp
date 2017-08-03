@@ -15,7 +15,8 @@ BEGIN_ASYNCIO_NAMESPACE;
 
 class EventLoop {
 public:
-  EventLoop(LoopCore *lc = nullptr);
+  EventLoop(LoopCore *lc = nullptr, bool own = true);
+  ~EventLoop();
 
   void runUntilComplete(FutureBase *future);
   void runForever();
@@ -72,6 +73,7 @@ protected:
 
 private:
   LoopCore *_lc;
+  bool _owner;
   bool _stop;
 };
 
