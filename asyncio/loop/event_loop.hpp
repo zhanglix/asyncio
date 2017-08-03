@@ -67,9 +67,6 @@ protected:
     fut->addRef();
   }
 
-protected:
-  static void call(TimerHandle *handle);
-
   // virtual void runForever();
   // virtual bool isRunning();
   // virtual void stop();

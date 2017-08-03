@@ -31,7 +31,7 @@ TEST_CASE("eventloop timer", "[loop]") {
     Verify(Method(spy, callSoon)).Once();
     SECTION("done") {
       LOG_DEBUG("before runOneIteration()");
-      lc->runOneIteration();
+      loop.runUntilComplete(fut);
       LOG_DEBUG("after runOneIteration()");
 
       CHECK(fut->completed());
@@ -57,7 +57,7 @@ TEST_CASE("eventloop timer", "[loop]") {
     Verify(Method(spy, callSoon)).Once();
 
     SECTION("done") {
-      lc->runOneIteration();
+      loop.runUntilComplete(fut);
       CHECK(fut->completed());
       CHECK_NOTHROW(fut->get());
       CHECK_FALSE(fut->cancel());
