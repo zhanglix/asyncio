@@ -9,6 +9,7 @@
 
 #include "future.hpp"
 #include "loop_core.hpp"
+#include "task.hpp"
 #include "timer_future.hpp"
 
 BEGIN_ASYNCIO_NAMESPACE;
@@ -39,6 +40,11 @@ public:
                                           std::forward<Args>(args)...);
   }
 
+  template <class CoroType> auto createTask(CoroType &&co) {
+    return new Task<typename std::remove_reference_t<CoroType>::ReturnType>;
+  }
+
+protected:
   template <bool threadSafe, class F, class... Args>
   auto callOnTimer(uint64_t milliseconds, F &&f, Args &&... args) {
     using R = typename std::result_of<F(Args...)>::type;

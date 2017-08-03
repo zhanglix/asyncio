@@ -12,9 +12,9 @@
 
 BEGIN_ASYNCIO_NAMESPACE;
 
-template <typename ReturnType, typename AllocatorType = DefaultAllocator>
-class coro {
+template <typename R, typename AllocatorType = DefaultAllocator> class coro {
 public:
+  typedef R ReturnType;
   using handle_base = std::experimental::coroutine_handle<>;
 
   class promise_type : public promise<ReturnType>, public AllocatorType {

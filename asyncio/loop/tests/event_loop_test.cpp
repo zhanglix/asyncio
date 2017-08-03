@@ -9,12 +9,59 @@
 #include "../loop_exception.hpp"
 #include "../uv_loop_core.hpp"
 #include "trivial_loop.hpp"
+#include <asyncio/coroutine.hpp>
 
 using namespace std;
 using namespace fakeit;
 using namespace asyncio;
 
 namespace eventloop_test {
+
+TEST_CASE("event_loop run", "[examples]") {
+  EventLoop loop;
+  auto fut = loop.callSoon([](int a, int b) { return a + b; }, 3, 5);
+  SECTION("run until complete") { loop.runUntilComplete(fut); }
+  SECTION("run until stop called") {
+    loop.callSoon([&] { loop.stop(); })->release();
+    loop.runForever();
+  }
+  CHECK(fut->get() == 8);
+  fut->release();
+}
+
+TEST_CASE("event_loop createTask", "[examples]") {
+  EventLoop loop;
+  auto foo = [](int a, int b) -> coro<int> { co_return a + b; };
+  Task<int> *task;
+  SECTION("coro<int>&&") { task = loop.createTask(foo(3, 5)); }
+  SECTION("coro<int>&") {
+    auto coro = foo(3, 5);
+    task = loop.createTask(coro);
+  }
+  loop.runUntilComplete(task);
+  CHECK(task->get() == 8);
+  task->release();
+}
+
+TEST_CASE("event_loop createTask delayed", "[examples]") {
+  EventLoop loop;
+  AWaitable<void> awaitable;
+  auto foo = [&](int a, int b) -> coro<int> {
+    co_await awaitable;
+    co_return a + b;
+  };
+  Task<int> *task = loop.createTask(foo(6, 2));
+  auto second = loop.callSoon([&] {});
+  auto third = loop.callLater(10, [&] { awaitable.resume(); });
+  loop.runUntilComplete(second);
+  CHECK_FALSE(task->completed());
+  loop.runUntilComplete(task);
+  CHECK(third->completed());
+  CHECK(task->get() == 8);
+  task->release();
+  second->release();
+  third->release();
+}
 
 TEST_CASE("eventloop timer", "[loop][trivial]") {
   TrivialLoop trivialLoop;
@@ -102,15 +149,4 @@ TEST_CASE("eventloop timer", "[loop][trivial]") {
   }
 }
 
-TEST_CASE("event_loop with UVLoopCore", "[examples]") {
-  EventLoop loop;
-  auto fut = loop.callSoon([](int a, int b) { return a + b; }, 3, 5);
-  SECTION("run until complete") { loop.runUntilComplete(fut); }
-  SECTION("run until stop called") {
-    loop.callSoon([&] { loop.stop(); })->release();
-    loop.runForever();
-  }
-  CHECK(fut->get() == 8);
-  fut->release();
-}
 } // namespace eventloop_test
