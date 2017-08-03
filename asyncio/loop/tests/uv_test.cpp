@@ -4,10 +4,13 @@
 
 #include <uv.h>
 
+#define ENABLE_ASYNCIO_LOG
+#include <asyncio/log.hpp>
+
 using namespace fakeit;
 namespace uv_test {
 
-TEST_CASE("uv_loop ", "[uv]") {
+TEST_CASE("uv_loop", "[uv]") {
   uv_loop_t uv_loop;
   REQUIRE(uv_loop_init(&uv_loop) == 0);
   int timeout;
@@ -79,6 +82,33 @@ TEST_CASE("uv_loop ", "[uv]") {
     CHECK(uv_run(&uv_loop, UV_RUN_ONCE) == 0);
   }
 
+  SECTION("hybrid") {
+    uv_async_t uv_async;
+    auto async_cb = [](uv_async_t *handle) { handle->data = handle; };
+    REQUIRE(uv_async_init(&uv_loop, &uv_async, async_cb) == 0);
+    uv_unref((uv_handle_t *)&uv_async);
+
+    uv_timer_t uv_timer;
+    auto timer_cb = [](uv_timer_t *handle) { handle->data = handle; };
+    REQUIRE(uv_timer_init(&uv_loop, &uv_timer) == 0);
+    CHECK(!uv_timer_start(&uv_timer, timer_cb, 0, 0));
+
+    LOG_DEBUG("Before First uv_run!");
+    CHECK(uv_run(&uv_loop, UV_RUN_ONCE) == 0);
+    CHECK(uv_timer.data == &uv_timer);
+
+    REQUIRE(uv_async_send(&uv_async) == 0);
+    uv_ref((uv_handle_t *)&uv_async);
+
+    LOG_DEBUG("Before second uv_run!");
+    CHECK(uv_run(&uv_loop, UV_RUN_ONCE) == 1);
+
+    uv_close((uv_handle_t *)(&uv_timer), nullptr);
+    uv_close((uv_handle_t *)(&uv_async), nullptr);
+
+    LOG_DEBUG("Before third uv_run!");
+    CHECK(uv_run(&uv_loop, UV_RUN_ONCE) == 0);
+  }
   REQUIRE(uv_loop_close(&uv_loop) == 0);
 }
 

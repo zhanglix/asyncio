@@ -4,6 +4,15 @@
 
 USING_ASYNNCIO_NAMESPACE;
 
+bool UVTimerHandleBase::cancel() {
+  if (_completed) {
+    return false;
+  } else {
+    completeTimer();
+    return true;
+  }
+}
+
 UVTimerHandle::UVTimerHandle(UVLoopCore *lc, TimerCallback callback, void *data)
     : UVTimerHandleBase(callback, data), _loop(lc) {
   _uv_timer = new uv_timer_t;
@@ -14,17 +23,6 @@ UVTimerHandle::UVTimerHandle(UVLoopCore *lc, TimerCallback callback, void *data)
 void UVTimerHandle::runCallBack() {
   UVTimerHandleBase::runCallBack();
   completeTimer();
-}
-
-bool UVTimerHandle::completed() { return _completed; }
-
-bool UVTimerHandle::cancel() {
-  if (_completed) {
-    return false;
-  } else {
-    completeTimer();
-    return true;
-  }
 }
 
 void UVTimerHandle::setupTimer(uint64_t later) {
@@ -75,5 +73,43 @@ UVTimerHandle::~UVTimerHandle() {
   close();
 }
 
-bool UVASyncTimerHandle::completed() { return false; }
-bool UVASyncTimerHandle::cancel() { return false; }
+// UVASyncTimerHandle following...
+
+UVASyncTimerHandle::UVASyncTimerHandle(UVAsyncService *service,
+                                       TimerCallback callback, void *data)
+    : UVTimerHandleBase(callback, data), _service(service) {
+  _service->addHandle();
+}
+
+UVASyncTimerHandle::~UVASyncTimerHandle() { _service->subHandle(); }
+
+size_t UVASyncTimerHandle::addRef() {
+  std::lock_guard<std::mutex> lock(_mutex);
+  return TimerHandle::addRef();
+}
+size_t UVASyncTimerHandle::subRef() {
+  std::lock_guard<std::mutex> lock(_mutex);
+  return TimerHandle::subRef();
+}
+
+bool UVASyncTimerHandle::cancel() {
+  std::lock_guard<std::mutex> lock(_mutex);
+  return UVTimerHandleBase::cancel();
+}
+
+void UVASyncTimerHandle::completeTimer() { _completed = true; }
+
+bool UVASyncTimerHandle::completeUnlessCanceled() {
+  std::lock_guard<std::mutex> lock(_mutex);
+  if (!_completed) {
+    _completed = true;
+    return true;
+  }
+  return false;
+}
+
+void UVASyncTimerHandle::runCallBack() {
+  if (completeUnlessCanceled()) {
+    UVTimerHandleBase::runCallBack();
+  }
+}

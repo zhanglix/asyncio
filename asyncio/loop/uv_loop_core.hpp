@@ -5,6 +5,7 @@
 #include <asyncio/common.hpp>
 
 #include "loop_core.hpp"
+#include "uv_async_service.hpp"
 
 BEGIN_ASYNCIO_NAMESPACE;
 
@@ -34,5 +35,6 @@ private:
   uv_loop_t *_loop;
   bool _owner;
   size_t _activeHandles;
+  UVAsyncService *_service;
 };
 END_ASYNCIO_NAMESPACE;

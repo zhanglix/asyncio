@@ -2,6 +2,7 @@
 
 #include <exception>
 #include <future>
+#include <mutex>
 #include <utility>
 
 #include <asyncio/common.hpp>

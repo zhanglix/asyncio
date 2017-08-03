@@ -7,22 +7,34 @@
 using namespace std;
 USING_ASYNNCIO_NAMESPACE;
 
-UVLoopCore::UVLoopCore() : _activeHandles(0) {
-  _loop = new uv_loop_t;
-  uv_loop_init(_loop);
-  _owner = true;
-}
+UVLoopCore::UVLoopCore() : UVLoopCore(nullptr) {}
 
 UVLoopCore::UVLoopCore(uv_loop_t *uvLoop) : _activeHandles(0) {
-  _loop = uvLoop;
-  _owner = false;
+  _owner = (uvLoop == nullptr);
+  if (_owner) {
+    _loop = new uv_loop_t;
+    uv_loop_init(_loop);
+  } else {
+    _loop = uvLoop;
+  }
+  _service = new UVAsyncService(_loop);
 }
 
 UVLoopCore::~UVLoopCore() { close(); }
-void UVLoopCore::runOneIteration() { uv_run(_loop, UV_RUN_ONCE); }
+
+void UVLoopCore::runOneIteration() {
+  if (_service) {
+    _service->tryActive();
+  }
+  uv_run(_loop, UV_RUN_ONCE);
+}
 void UVLoopCore::close() { closeUVLoopT(); }
 
-size_t UVLoopCore::activeHandlesCount() { return _activeHandles; }
+size_t UVLoopCore::activeHandlesCount() {
+  size_t async_count = _service ? _service->activeHandlesCount() : 0;
+  return _activeHandles + async_count;
+}
+
 uint64_t UVLoopCore::time() { return uv_now(_loop); }
 
 TimerHandle *UVLoopCore::callSoon(TimerCallback callback, void *data) {
@@ -31,7 +43,7 @@ TimerHandle *UVLoopCore::callSoon(TimerCallback callback, void *data) {
 
 TimerHandle *UVLoopCore::callSoonThreadSafe(TimerCallback callback,
                                             void *data) {
-  return new UVTimerHandle(this, callback, data);
+  return _service->callSoon(callback, data);
 }
 
 TimerHandle *UVLoopCore::callLater(uint64_t milliseconds,
@@ -42,6 +54,14 @@ TimerHandle *UVLoopCore::callLater(uint64_t milliseconds,
 }
 
 void UVLoopCore::closeUVLoopT() {
+  if (activeHandlesCount()) {
+    throw LoopBusyError("UVLoopCore Busy.");
+  }
+  if (_service) {
+    _service->close();
+    delete _service;
+    _service = nullptr;
+  }
   if (_loop) {
     runOneIteration(); // clear pending closing callback;
   }
