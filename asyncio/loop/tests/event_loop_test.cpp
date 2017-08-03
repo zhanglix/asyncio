@@ -7,6 +7,7 @@
 #include "../event_loop.hpp"
 #include "../loop_core.hpp"
 #include "../loop_exception.hpp"
+#include "../uv_loop_core.hpp"
 #include "trivial_loop.hpp"
 
 using namespace std;
@@ -15,7 +16,7 @@ using namespace asyncio;
 
 namespace eventloop_test {
 
-TEST_CASE("eventloop timer", "[loop]") {
+TEST_CASE("eventloop timer", "[loop][trivial]") {
   TrivialLoop trivialLoop;
   Mock<TrivialLoop> spy(trivialLoop);
   Spy(Method(spy, callSoon));
@@ -98,6 +99,25 @@ TEST_CASE("eventloop timer", "[loop]") {
     lc->runOneIteration();
     Verify(Method(spy, recycleTimerHandle)).Once();
     LOG_DEBUG("end callSoonThreadSafe");
+  }
+}
+
+TEST_CASE("event_loop with UVLoopCore", "[examples]") {
+  UVLoopCore uvlc;
+  EventLoop loop(&uvlc);
+  SECTION("run until complete") {
+    auto fut = loop.callSoon([](int a, int b) { return a + b; }, 3, 5);
+    loop.runUntilComplete(fut);
+    CHECK(fut->get() == 8);
+    fut->release();
+  }
+
+  SECTION("run until stop called") {
+    auto fut = loop.callSoon([](int a, int b) { return a + b; }, 3, 5);
+    loop.callSoon([&] { loop.stop(); })->release();
+    loop.runForever();
+    CHECK(fut->get() == 8);
+    fut->release();
   }
 }
 } // namespace eventloop_test

@@ -15,8 +15,11 @@ BEGIN_ASYNCIO_NAMESPACE;
 
 class EventLoop {
 public:
-  EventLoop(LoopCore *lc = nullptr) : _lc(lc) {}
-  virtual void runUntilComplete(FutureBase *future);
+  EventLoop(LoopCore *lc = nullptr);
+
+  void runUntilComplete(FutureBase *future);
+  void runForever();
+  void stop();
 
   template <class F, class... Args> auto callSoon(F &&f, Args &&... args) {
     return callOnTimer<false, F, Args...>(0, std::forward<F>(f),
@@ -67,20 +70,9 @@ protected:
     fut->addRef();
   }
 
-  // virtual void runForever();
-  // virtual bool isRunning();
-  // virtual void stop();
-  // virtual bool isClosed();
-  // virtual void closed();
-  //  virtual void shutdownAsyncGens();
-  // virtual Handle callSoon(std::function<void()> call);
-  // virtual Handle callSoonThreadSafe(std::function<void()> call);
-  // virtual Handle callLater(uint64_t milliseconds, std::function<void()>
-  // call); virtual uint64_t time(); virtual Future *create_future(); virtual
-  // Task *createTask(std::function<AWaitable()>);
-
 private:
   LoopCore *_lc;
+  bool _stop;
 };
 
 END_ASYNCIO_NAMESPACE;
