@@ -32,12 +32,15 @@ TEST_CASE("event_loop run", "[examples]") {
 TEST_CASE("event_loop createTask", "[examples]") {
   EventLoop loop;
   auto foo = [](int a, int b) -> coro<int> { co_return a + b; };
-  Task<int> *task;
+  Future<int> *task;
   SECTION("coro<int>&&") { task = loop.createTask(foo(3, 5)); }
   SECTION("coro<int>&") {
     auto coro = foo(3, 5);
     task = loop.createTask(coro);
   }
+  SECTION("later") { task = loop.createTaskLater(1, foo(3, 5)); }
+  SECTION("thread safe") { task = loop.createTaskThreadSafe(foo(3, 5)); }
+
   loop.runUntilComplete(task);
   CHECK(task->get() == 8);
   task->release();
@@ -47,16 +50,27 @@ TEST_CASE("event_loop createTask delayed", "[examples]") {
   EventLoop loop;
   AWaitable<void> awaitable;
   auto foo = [&](int a, int b) -> coro<int> {
+    LOG_DEBUG("before co_await awaitable");
     co_await awaitable;
+    LOG_DEBUG("done co_await awaitable");
     co_return a + b;
   };
-  Task<int> *task = loop.createTask(foo(6, 2));
-  auto second = loop.callSoon([&] {});
-  auto third = loop.callLater(10, [&] { awaitable.resume(); });
+  Future<int> *task = loop.createTask(foo(6, 2));
+  auto second = loop.callSoon([&] { LOG_DEBUG("do nothing"); });
+  auto third = loop.callLater(10, [&] {
+    LOG_DEBUG("before awaitable.resume()");
+    awaitable.resume();
+    LOG_DEBUG("done awaitable.resume()");
+
+  });
+  LOG_DEBUG("before loop.runUntilComplete(second)");
   loop.runUntilComplete(second);
+  LOG_DEBUG("end loop.runUntilComplete(second)");
   CHECK_FALSE(task->completed());
+  LOG_DEBUG("before loop.runUntilComplete(task)");
   loop.runUntilComplete(task);
-  CHECK(third->completed());
+  LOG_DEBUG("end loop.runUntilComplete(task)");
+  REQUIRE(third->completed());
   CHECK(task->get() == 8);
   task->release();
   second->release();

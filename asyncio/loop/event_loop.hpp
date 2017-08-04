@@ -41,7 +41,17 @@ public:
   }
 
   template <class CoroType> auto createTask(CoroType &&co) {
-    return new Task<typename std::remove_reference_t<CoroType>::ReturnType>;
+    return taskOnTimer<false, CoroType>(0, std::forward<CoroType>(co));
+  }
+
+  template <class CoroType>
+  auto createTaskLater(uint64_t milliseconds, CoroType &&co) {
+    return taskOnTimer<false, CoroType>(milliseconds,
+                                        std::forward<CoroType>(co));
+  }
+
+  template <class CoroType> auto createTaskThreadSafe(CoroType &&co) {
+    return taskOnTimer<true, CoroType>(0, std::forward<CoroType>(co));
   }
 
 protected:
@@ -58,23 +68,30 @@ protected:
     return timerFuture;
   }
 
+  template <bool threadSafe, class CoroType>
+  auto taskOnTimer(uint64_t milliseconds, CoroType &&co) {
+    using C = std::remove_reference_t<CoroType>;
+    using R = typename C::ReturnType;
+    auto task = new Task<C, R>(std::forward<CoroType>(co));
+    setupFuture<threadSafe, Task<C, R>>(task, milliseconds);
+    Future<R> *ret = task;
+    return ret;
+  }
+
 protected:
   template <bool threadSafe, class Fut>
   std::enable_if_t<threadSafe> setupFuture(Fut *fut, uint64_t) {
+    fut->addRef();
     auto handle = _lc->callSoonThreadSafe(fut->callback, fut);
-    setupHandle(fut, handle);
+    fut->setHandle(handle);
   }
 
   template <bool threadSafe, class Fut>
   std::enable_if_t<!threadSafe> setupFuture(Fut *fut, uint64_t ms) {
+    fut->addRef();
     auto handle = ms > 0 ? _lc->callLater(ms, fut->callback, fut)
                          : _lc->callSoon(fut->callback, fut);
-    setupHandle(fut, handle);
-  }
-
-  template <class Fut> void setupHandle(Fut *fut, TimerHandle *handle) {
     fut->setHandle(handle);
-    fut->addRef();
   }
 
 private:
@@ -84,3 +101,9 @@ private:
 };
 
 END_ASYNCIO_NAMESPACE;
+;
+;
+;
+;
+;
+;

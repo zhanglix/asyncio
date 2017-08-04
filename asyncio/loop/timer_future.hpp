@@ -14,39 +14,20 @@
 
 BEGIN_ASYNCIO_NAMESPACE;
 
-template <class R> class TimerFuture : public Future<R> {
+template <class R> class TimerFutureBase : public Future<R> {
 public:
-  typedef std::function<R(void)> F;
-  TimerFuture(F &f) : _f(f), _handle(nullptr), _refCount(1) {
+  TimerFutureBase() : _handle(nullptr), _refCount(1) {
     _future = std::move(_promise.get_future());
   }
-  void setHandle(TimerHandle *handle) { _handle = handle; }
-  virtual ~TimerFuture() {
+
+  virtual ~TimerFutureBase() {
     if (_handle) {
       _handle->subRef();
     }
   }
   virtual R get() override { return _future.get(); }
 
-  void operator()() {
-    try {
-      setPromise<R>();
-    } catch (...) {
-      _promise.set_exception(std::current_exception());
-    }
-    subRef();
-  }
-
-  template <class T>
-  typename std::enable_if_t<std::is_void<T>::value> setPromise() {
-    _f();
-    _promise.set_value();
-  }
-
-  template <class T>
-  typename std::enable_if_t<!std::is_void<T>::value> setPromise() {
-    _promise.set_value(_f());
-  }
+  virtual void operator()() = 0;
 
   bool completed() override { return _handle->completed(); }
   bool cancel() override {
@@ -59,13 +40,15 @@ public:
       return false;
     }
   }
+
   void release() override {
     LOG_DEBUG("fut({})->_refCount:({}). handle({})->refCount:({})",
               (void *)this, _refCount, (void *)_handle, _handle->refCount());
     subRef();
   }
+
   static void callback(TimerHandle *handle) {
-    auto timerFuture = (TimerFuture<R> *)(handle->data());
+    auto timerFuture = (TimerFutureBase<R> *)(handle->data());
     (*timerFuture)();
   }
 
@@ -80,13 +63,43 @@ public:
       return _refCount;
     }
   }
+  void setHandle(TimerHandle *handle) { _handle = handle; }
 
 protected:
   std::promise<R> _promise;
   std::future<R> _future;
-  F _f;
   TimerHandle *_handle;
   size_t _refCount;
+};
+
+template <class R> class TimerFuture : public TimerFutureBase<R> {
+public:
+  typedef std::function<R(void)> F;
+  TimerFuture(F &f) : _f(f) {}
+  virtual ~TimerFuture() {}
+
+  template <class T>
+  typename std::enable_if_t<std::is_void<T>::value> setPromise() {
+    _f();
+    this->_promise.set_value();
+  }
+
+  template <class T>
+  typename std::enable_if_t<!std::is_void<T>::value> setPromise() {
+    this->_promise.set_value(_f());
+  }
+
+  virtual void operator()() {
+    try {
+      this->template setPromise<R>();
+    } catch (...) {
+      this->_promise.set_exception(std::current_exception());
+    }
+    this->subRef();
+  }
+
+protected:
+  F _f;
 };
 
 template <class R> class TimerFutureThreadSafe : public TimerFuture<R> {
