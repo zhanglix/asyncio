@@ -77,6 +77,21 @@ TEST_CASE("event_loop createTask delayed", "[examples]") {
   third->release();
 }
 
+TEST_CASE("eventloop", "[release]") {
+  EventLoop loop;
+  SECTION("task") {
+    auto foo = []() -> coro<void> { co_return; };
+    loop.createTask(foo())->release();
+  }
+  SECTION("call") {
+    loop.callSoon([] {})->release();
+  }
+
+  auto last = loop.callSoon([] {});
+  loop.runUntilComplete(last);
+  last->release();
+}
+
 TEST_CASE("eventloop timer", "[loop][trivial]") {
   TrivialLoop trivialLoop;
   Mock<TrivialLoop> spy(trivialLoop);

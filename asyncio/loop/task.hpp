@@ -5,11 +5,13 @@
 #include <asyncio/coroutine.hpp>
 
 #include "future.hpp"
+#include "sub_ref_coro.hpp"
 #include "timer_future.hpp"
 
 BEGIN_ASYNCIO_NAMESPACE;
 
-template <class C, class R> class Task : public TimerFutureBase<R> {
+template <class C, class R, class A = DefaultAllocator>
+class Task : public TimerFutureBase<R> {
 public:
   Task(C &co) : _co(std::move(co)), _done(false) {}
   Task(C &&co) : Task<C, R>(co) {}
@@ -21,33 +23,33 @@ public:
   }
   void operator()() override {
     _coHolder = runCoro();
-    _coHolder.await_suspend(nullptr);
+    _coHolder.setP(this);
+    _coHolder.run();
   }
 
-  coro<void> runCoro() {
+  SubRefCoro<Task, A> runCoro() {
     try {
       co_await setPromise<R>();
     } catch (...) {
       this->_promise.set_exception(std::current_exception());
     }
     this->_done = true;
-    this->subRef();
   }
 
   template <class T>
-  coro<typename std::enable_if_t<std::is_void<T>::value>> setPromise() {
+  coro<typename std::enable_if_t<std::is_void<T>::value>, A> setPromise() {
     co_await _co;
     this->_promise.set_value();
   }
 
   template <class T>
-  coro<typename std::enable_if_t<!std::is_void<T>::value>> setPromise() {
+  coro<typename std::enable_if_t<!std::is_void<T>::value>, A> setPromise() {
     this->_promise.set_value(co_await _co);
   }
 
 protected:
   C _co;
-  coro<void> _coHolder;
+  SubRefCoro<Task, A> _coHolder;
   bool _done;
 };
 
