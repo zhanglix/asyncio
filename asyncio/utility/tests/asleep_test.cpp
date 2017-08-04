@@ -12,7 +12,7 @@ TEST_CASE("asleep", "[utility]") {
   EventLoop loop;
   string output;
   auto foo = [&](uint64_t ms, string word) -> coro<void> {
-    co_await asleep(ms, &loop);
+    co_await asleep(&loop, ms);
     output += word;
   };
   auto first = loop.createTask(foo(30, "A"));

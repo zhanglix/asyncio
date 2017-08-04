@@ -5,6 +5,7 @@ add_executable(
   )
   
 target_link_libraries (utility_test  
+  utility
   loop 
   uv
   )

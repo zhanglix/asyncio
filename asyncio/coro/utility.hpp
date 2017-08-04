@@ -71,6 +71,7 @@ public:
 
   bool await_ready() const noexcept { return _ready; }
   bool await_suspend(std::experimental::coroutine_handle<> caller) noexcept {
+    run();
     if (!_ready) {
       _caller = caller;
     }
@@ -82,6 +83,7 @@ public:
     this->setReady();
     this->resumeCaller();
   }
+  virtual void run() {}
 
 protected:
   void setReady() { _ready = true; }
