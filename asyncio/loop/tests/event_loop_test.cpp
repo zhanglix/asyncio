@@ -50,26 +50,15 @@ TEST_CASE("event_loop createTask delayed", "[examples]") {
   EventLoop loop;
   AWaitable<void> awaitable;
   auto foo = [&](int a, int b) -> coro<int> {
-    LOG_DEBUG("before co_await awaitable");
     co_await awaitable;
-    LOG_DEBUG("done co_await awaitable");
     co_return a + b;
   };
   Future<int> *task = loop.createTask(foo(6, 2));
   auto second = loop.callSoon([&] { LOG_DEBUG("do nothing"); });
-  auto third = loop.callLater(10, [&] {
-    LOG_DEBUG("before awaitable.resume()");
-    awaitable.resume();
-    LOG_DEBUG("done awaitable.resume()");
-
-  });
-  LOG_DEBUG("before loop.runUntilComplete(second)");
   loop.runUntilComplete(second);
-  LOG_DEBUG("end loop.runUntilComplete(second)");
   CHECK_FALSE(task->completed());
-  LOG_DEBUG("before loop.runUntilComplete(task)");
+  auto third = loop.callSoon([&] { awaitable.resume(); });
   loop.runUntilComplete(task);
-  LOG_DEBUG("end loop.runUntilComplete(task)");
   REQUIRE(third->completed());
   CHECK(task->get() == 8);
   task->release();

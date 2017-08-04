@@ -22,7 +22,13 @@ UVLoopCore::UVLoopCore(uv_loop_t *uvLoop) : _activeHandles(0) {
 
 UVLoopCore::~UVLoopCore() { close(); }
 
-void UVLoopCore::runOneIteration() { uv_run(_loop, UV_RUN_ONCE); }
+void UVLoopCore::timerCompleted() { _loop->stop_flag = 1; }
+void UVLoopCore::restoreLoop() { _loop->stop_flag = 0; }
+void UVLoopCore::runOneIteration() {
+  restoreLoop(); // tricks to fix uv_run() haning
+  uv_run(_loop, UV_RUN_ONCE);
+}
+
 void UVLoopCore::close() { closeUVLoopT(); }
 
 size_t UVLoopCore::activeHandlesCount() {
@@ -33,7 +39,7 @@ size_t UVLoopCore::activeHandlesCount() {
 uint64_t UVLoopCore::time() { return uv_now(_loop); }
 
 TimerHandle *UVLoopCore::callSoon(TimerCallback callback, void *data) {
-  return callSoonThreadSafe(callback, data);
+  return callLater(0, callback, data);
 }
 
 TimerHandle *UVLoopCore::callSoonThreadSafe(TimerCallback callback,

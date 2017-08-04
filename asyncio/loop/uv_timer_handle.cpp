@@ -26,14 +26,15 @@ void UVTimerHandle::runCallBack() {
 }
 
 void UVTimerHandle::setupTimer(uint64_t later) {
+  addRef();
   _completed = false;
   uvTimerStart(later);
-  addRef();
 }
 
 void UVTimerHandle::completeTimer() {
   uvTimerStop();
   _completed = true;
+  _loop->timerCompleted();
   subRef();
 }
 
