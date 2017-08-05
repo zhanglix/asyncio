@@ -10,11 +10,12 @@
 
 BEGIN_ASYNCIO_NAMESPACE;
 
-template <class C, class R, class A = DefaultAllocator>
-class Task : public TimerFutureBase<R> {
+template <class C, class R, bool threadSafe, class A = DefaultAllocator>
+class Task : public std::conditional_t<threadSafe, TimerFutureBaseThreadSafe<R>,
+                                       TimerFutureBase<R>> {
 public:
   Task(C &co) : _co(std::move(co)), _done(false) {}
-  Task(C &&co) : Task<C, R>(co) {}
+  Task(C &&co) : Task(co) {}
 
   virtual ~Task() {}
 

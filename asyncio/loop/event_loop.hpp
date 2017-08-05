@@ -58,24 +58,24 @@ protected:
   template <bool threadSafe, class F, class... Args>
   auto callOnTimer(uint64_t milliseconds, F &&f, Args &&... args) {
     using R = typename std::result_of<F(Args...)>::type;
-    using FutureType = std::conditional_t<threadSafe, TimerFutureThreadSafe<R>,
-                                          TimerFuture<R>>;
+    using FutureType = TimerFuture<R, threadSafe>;
     std::function<R(void)> call =
         std::bind(std::forward<F>(f), std::forward<Args>(args)...);
 
     auto timerFuture = new FutureType(call);
     setupFuture<threadSafe, FutureType>(timerFuture, milliseconds);
-    return timerFuture;
+    return (Future<R> *)timerFuture;
   }
 
   template <bool threadSafe, class CoroType>
   auto taskOnTimer(uint64_t milliseconds, CoroType &&co) {
     using C = std::remove_reference_t<CoroType>;
     using R = typename C::ReturnType;
-    auto task = new Task<C, R>(std::forward<CoroType>(co));
-    setupFuture<threadSafe, Task<C, R>>(task, milliseconds);
-    Future<R> *ret = task;
-    return ret;
+    using FutureType = Task<C, R, threadSafe>;
+
+    auto timerFuture = new FutureType(std::forward<CoroType>(co));
+    setupFuture<threadSafe, FutureType>(timerFuture, milliseconds);
+    return (Future<R> *)timerFuture;
   }
 
 protected:

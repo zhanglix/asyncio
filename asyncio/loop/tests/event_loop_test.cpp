@@ -201,8 +201,7 @@ TEST_CASE("eventloop timer", "[loop][trivial]") {
   SECTION("callSoonThreadSafe") {
     LOG_DEBUG("begin callSoonThreadSafe");
     Spy(Method(spy, callSoonThreadSafe));
-    TimerFutureThreadSafe<int> *fut =
-        loop.callSoonThreadSafe([](int in) { return in; }, 3);
+    Future<int> *fut = loop.callSoonThreadSafe([](int in) { return in; }, 3);
     CHECK_FALSE(fut->done());
     Verify(Method(spy, callSoonThreadSafe)).Once();
 

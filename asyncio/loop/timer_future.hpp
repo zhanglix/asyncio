@@ -121,7 +121,39 @@ protected:
   DoneCallback _doneCallback;
 };
 
-template <class R> class TimerFuture : public TimerFutureBase<R> {
+template <class R> class TimerFutureBaseThreadSafe : public TimerFutureBase<R> {
+public:
+  TimerFutureBaseThreadSafe() : TimerFutureBase<R>() {}
+  virtual ~TimerFutureBaseThreadSafe() {}
+
+  virtual size_t doAddRef() override {
+    std::lock_guard<std::mutex> lock(_mutex);
+    return TimerFutureBase<R>::doAddRef();
+  }
+  virtual size_t doSubRef() override {
+    std::lock_guard<std::mutex> lock(_mutex);
+    return TimerFutureBase<R>::doSubRef();
+  }
+
+  using DoneCallback = typename Future<R>::DoneCallback;
+  virtual bool callNowOrSet(DoneCallback &callback) override {
+    std::lock_guard<std::mutex> lock(_mutex);
+    return TimerFutureBase<R>::callNowOrSet(callback);
+  }
+
+  virtual bool hasDoneCallback() override {
+    std::lock_guard<std::mutex> lock(_mutex);
+    return TimerFutureBase<R>::hasDoneCallback();
+  }
+
+protected:
+  std::mutex _mutex;
+};
+
+template <class R, bool threadSafe>
+class TimerFuture
+    : public std::conditional_t<threadSafe, TimerFutureBaseThreadSafe<R>,
+                                TimerFutureBase<R>> {
 public:
   typedef std::function<R(void)> F;
   TimerFuture(F &f) : _f(f) {}
@@ -148,35 +180,6 @@ public:
 
 protected:
   F _f;
-};
-
-template <class R> class TimerFutureThreadSafe : public TimerFuture<R> {
-public:
-  using typename TimerFuture<R>::F;
-  TimerFutureThreadSafe(F &f) : TimerFuture<R>(f) {}
-
-  virtual size_t doAddRef() override {
-    std::lock_guard<std::mutex> lock(_mutex);
-    return TimerFuture<R>::doAddRef();
-  }
-  virtual size_t doSubRef() override {
-    std::lock_guard<std::mutex> lock(_mutex);
-    return TimerFuture<R>::doSubRef();
-  }
-
-  using DoneCallback = typename Future<R>::DoneCallback;
-  virtual bool callNowOrSet(DoneCallback &callback) override {
-    std::lock_guard<std::mutex> lock(_mutex);
-    return TimerFuture<R>::callNowOrSet(callback);
-  }
-
-  virtual bool hasDoneCallback() override {
-    std::lock_guard<std::mutex> lock(_mutex);
-    return TimerFuture<R>::hasDoneCallback();
-  }
-
-protected:
-  std::mutex _mutex;
 };
 
 END_ASYNCIO_NAMESPACE;
