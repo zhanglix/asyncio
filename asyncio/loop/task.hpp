@@ -4,8 +4,8 @@
 
 #include <asyncio/coroutine.hpp>
 
+#include "end_coro.hpp"
 #include "future.hpp"
-#include "sub_ref_coro.hpp"
 #include "timer_future.hpp"
 
 BEGIN_ASYNCIO_NAMESPACE;
@@ -22,7 +22,6 @@ public:
   void process() override { startTimer(); }
   void startTimer() override {
     _coHolder = runCoro();
-    _coHolder.setP(this);
     _coHolder.run();
   }
   void endTimer() override {
@@ -30,14 +29,13 @@ public:
     TimerFutureBase<R>::endTimer();
   }
 
-  SubRefCoro<Task, A> runCoro() {
+  EndCoro<A> runCoro() {
     try {
       co_await setPromise<R>();
     } catch (...) {
       this->_promise.set_exception(std::current_exception());
     }
-    this->_done = true;
-    this->tryCallDoneCallback();
+    co_return([&] { this->endTimer(); });
   }
 
   template <class T>
@@ -53,7 +51,7 @@ public:
 
 protected:
   C _co;
-  SubRefCoro<Task, A> _coHolder;
+  EndCoro<A> _coHolder;
   bool _done;
 };
 

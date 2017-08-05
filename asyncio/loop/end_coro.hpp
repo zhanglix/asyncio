@@ -6,50 +6,51 @@
 #include <asyncio/log.hpp>
 
 #include "../coro/allocator.hpp"
+#include <functional>
 
 BEGIN_ASYNCIO_NAMESPACE;
 
-template <class T, class A = DefaultAllocator> class SubRefCoro {
+template <class A = DefaultAllocator> class EndCoro {
 public:
   using suspend_always = std::experimental::suspend_always;
-  class SubRefSuspend : public suspend_always {
+  class EndSuspend : public suspend_always {
   public:
-    SubRefSuspend(T *p) : _p(p) {}
+    EndSuspend(std::function<void()> &f) : _f(f) {}
     void await_suspend(std::experimental::coroutine_handle<>) const noexcept {
-      LOG_DEBUG("SubRefSuspend:{} SubRef T*={}", (void *)this, (void *)_p);
-      _p->subRef();
+      LOG_DEBUG("EndSuspend::await_suspend ");
+      _f();
     }
 
   private:
-    T *_p;
+    std::function<void()> &_f;
   };
 
   class promise_type {
   public:
-    promise_type() : _p(nullptr) {}
-    ~promise_type() {}
     auto get_return_object() {
-      return SubRefCoro(
+      return EndCoro(
           std::experimental::coroutine_handle<promise_type>::from_promise(
               *this));
     }
     static auto get_return_object_on_allocation_failure() {
-      return SubRefCoro(nullptr);
+      return EndCoro(nullptr);
     }
     suspend_always initial_suspend() { return suspend_always{}; }
-    SubRefSuspend final_suspend() { return SubRefSuspend(_p); }
-    void setP(T *p) { _p = p; }
-    void return_void() {}
-    void unhandled_exception() {}
+    EndSuspend final_suspend() { return EndSuspend(_f); }
+    void return_value(std::function<void()> &&f) { return_value(f); }
+    void return_value(std::function<void()> &f) { _f = f; }
+    void unhandled_exception() {
+      LOG_ERROR("Should catch all exceptions in EndCoro!");
+    }
 
   private:
-    T *_p;
+    std::function<void()> _f;
   };
 
   operator bool() const { return bool(_handle); }
 
   void run() {
-    LOG_DEBUG("SubRefCoro::run. this: {}, handle: {}", (void *)this,
+    LOG_DEBUG("EndCoro::run. this: {}, handle: {}", (void *)this,
               _handle.address());
     if (_handle) {
       _handle.resume();
@@ -66,25 +67,25 @@ public:
     _handle = nullptr;
   }
 
-  SubRefCoro(std::experimental::coroutine_handle<promise_type> h) : _handle(h) {
-    LOG_DEBUG("Constructing SubRefCoro this: {} handle: {}", (void *)this,
+  EndCoro(std::experimental::coroutine_handle<promise_type> h) : _handle(h) {
+    LOG_DEBUG("Constructing EndCoro this: {} handle: {}", (void *)this,
               h.address());
   }
-  SubRefCoro(const SubRefCoro &) = delete;
-  SubRefCoro(SubRefCoro &&other) : _handle(other._handle) {
-    LOG_DEBUG("Move Constructing SubRefCoro this: {}, handle: {}", (void *)this,
+  EndCoro(const EndCoro &) = delete;
+  EndCoro(EndCoro &&other) : _handle(other._handle) {
+    LOG_DEBUG("Move Constructing EndCoro this: {}, handle: {}", (void *)this,
               _handle.address());
     other._handle = std::experimental::coroutine_handle<promise_type>();
   }
-  SubRefCoro() {}
-  ~SubRefCoro() {
-    LOG_DEBUG("Destructing SubRefCoro this: {}, handle: {}", (void *)this,
+  EndCoro() {}
+  ~EndCoro() {
+    LOG_DEBUG("Destructing EndCoro this: {}, handle: {}", (void *)this,
               _handle.address());
     destroy_handle();
   }
 
-  SubRefCoro &operator=(SubRefCoro &&other) {
-    LOG_DEBUG("Move assignment SubRefCoro this: {}, handle: {}", (void *)this,
+  EndCoro &operator=(EndCoro &&other) {
+    LOG_DEBUG("Move assignment EndCoro this: {}, handle: {}", (void *)this,
               other._handle.address());
     destroy_handle();
     _handle = other._handle;
@@ -99,8 +100,6 @@ public:
       return nullptr;
     }
   }
-
-  void setP(T *p) { _handle.promise().setP(p); }
 
 private:
   std::experimental::coroutine_handle<promise_type> _handle;
