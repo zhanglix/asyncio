@@ -21,10 +21,15 @@ public:
   bool done() const override {
     return this->_done && TimerFutureBase<R>::done();
   }
-  void operator()() override {
+  void processTimer() override { startTimer(); }
+  void startTimer() override {
     _coHolder = runCoro();
     _coHolder.setP(this);
     _coHolder.run();
+  }
+  void endTimer() override {
+    this->_done = true;
+    this->callDoneCallback();
   }
 
   SubRefCoro<Task, A> runCoro() {
@@ -33,7 +38,7 @@ public:
     } catch (...) {
       this->_promise.set_exception(std::current_exception());
     }
-    this->_done = true;
+    endTimer();
   }
 
   template <class T>

@@ -5,7 +5,11 @@
 
 int main(int argc, char *argv[]) {
   // global setup...
-  spdlog::set_level(spdlog::level::debug);
+  if (const char *env_p = std::getenv("LOG_DEBUG")) {
+    spdlog::set_level(spdlog::level::debug);
+  } else {
+    spdlog::set_level(spdlog::level::info);
+  }
 
   int result = Catch::Session().run(argc, argv);
 

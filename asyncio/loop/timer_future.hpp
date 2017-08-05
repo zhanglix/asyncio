@@ -27,14 +27,24 @@ public:
   }
   virtual R get() override { return _future.get(); }
 
-  virtual void operator()() = 0;
+  virtual void processTimer() {
+    startTimer();
+    endTimer();
+  }
+
+  virtual void startTimer() = 0;
+
+  virtual void endTimer() {
+    callDoneCallback();
+    this->subRef();
+  }
 
   bool done() const override { return _handle->done(); }
   bool cancel() override {
     if (_handle->cancel()) {
       _promise.set_exception(
           std::make_exception_ptr(FutureCanceledError("canceled")));
-      subRef();
+      endTimer();
       return true;
     } else {
       return false;
@@ -49,7 +59,7 @@ public:
 
   static void callback(TimerHandle *handle) {
     auto timerFuture = (TimerFutureBase<R> *)(handle->data());
-    (*timerFuture)();
+    timerFuture->processTimer();
   }
 
   size_t refCount() const { return _refCount; }
@@ -63,17 +73,30 @@ public:
       return _refCount;
     }
   }
+
   void setHandle(TimerHandle *handle) { _handle = handle; }
 
   using DoneCallback = typename Future<R>::DoneCallback;
-  void setDoneCallback(DoneCallback callback) override {}
+  void setDoneCallback(DoneCallback callback) override {
+    if (done()) {
+      callback(this);
+    } else {
+      _doneCallback = callback;
+    }
+  }
+
+  void callDoneCallback() {
+    if (_doneCallback) {
+      _doneCallback(this);
+    }
+  }
 
 protected:
   std::promise<R> _promise;
   std::future<R> _future;
   TimerHandle *_handle;
   size_t _refCount;
-  DoneCallback _doneCallbacks;
+  DoneCallback _doneCallback;
 };
 
 template <class R> class TimerFuture : public TimerFutureBase<R> {
@@ -93,13 +116,12 @@ public:
     this->_promise.set_value(_f());
   }
 
-  virtual void operator()() {
+  virtual void startTimer() {
     try {
       this->template setPromise<R>();
     } catch (...) {
       this->_promise.set_exception(std::current_exception());
     }
-    this->subRef();
   }
 
 protected:

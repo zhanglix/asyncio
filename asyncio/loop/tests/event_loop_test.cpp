@@ -83,11 +83,11 @@ TEST_CASE("eventloop release early", "[release]") {
 
 TEST_CASE("event loop done callback", "[callback]") {
   EventLoop loop;
-  bool done = false;
-  auto onDone = [&](Future<void> *) { done = true; };
+  Future<void> *done = nullptr;
+  auto onDone = [&](Future<void> *h) { done = h; };
   auto doNothing = [] {};
   auto coNothing = []() -> coro<void> { co_return; }();
-  Future<void> *fut;
+  Future<void> *fut = nullptr;
   SECTION("setDoneCallback before future.done()") {
     SECTION("soon") { fut = loop.callSoon(doNothing); }
     SECTION("later") { fut = loop.callLater(1, doNothing); }
@@ -95,8 +95,10 @@ TEST_CASE("event loop done callback", "[callback]") {
     SECTION("task") { fut = loop.createTask(coNothing); }
     SECTION("task.later") { fut = loop.createTaskLater(1, coNothing); }
     SECTION("task.threadSafe") { fut = loop.createTaskThreadSafe(coNothing); }
+    REQUIRE(fut);
     fut->setDoneCallback(onDone);
     loop.runUntilDone(fut);
+    fut->release();
   }
   SECTION("setDoneCallback after future.done()") {
     SECTION("soon") { fut = loop.callSoon(doNothing); }
@@ -105,11 +107,12 @@ TEST_CASE("event loop done callback", "[callback]") {
     SECTION("task") { fut = loop.createTask(coNothing); }
     SECTION("task.later") { fut = loop.createTaskLater(1, coNothing); }
     SECTION("task.threadSafe") { fut = loop.createTaskThreadSafe(coNothing); }
+    REQUIRE(fut);
     loop.runUntilDone(fut);
     fut->setDoneCallback(onDone);
+    fut->release();
   }
-  fut->release();
-  CHECK(done);
+  CHECK(fut == done);
 }
 
 TEST_CASE("eventloop timer", "[loop][trivial]") {
