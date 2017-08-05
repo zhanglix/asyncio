@@ -25,31 +25,10 @@ public:
       _handle->subRef();
     }
   }
+
   virtual R get() override { return _future.get(); }
 
-  virtual void processTimer() {
-    startTimer();
-    endTimer();
-  }
-
-  virtual void startTimer() = 0;
-
-  virtual void endTimer() {
-    callDoneCallback();
-    this->subRef();
-  }
-
   bool done() const override { return _handle->done(); }
-  bool cancel() override {
-    if (_handle->cancel()) {
-      _promise.set_exception(
-          std::make_exception_ptr(FutureCanceledError("canceled")));
-      endTimer();
-      return true;
-    } else {
-      return false;
-    }
-  }
 
   void release() override {
     LOG_DEBUG("fut({})->_refCount:({}). handle({})->refCount:({})",
@@ -57,39 +36,82 @@ public:
     subRef();
   }
 
-  static void callback(TimerHandle *handle) {
-    auto timerFuture = (TimerFutureBase<R> *)(handle->data());
-    timerFuture->processTimer();
-  }
-
-  size_t refCount() const { return _refCount; }
-
-  virtual size_t addRef() { return ++_refCount; }
-  virtual size_t subRef() {
-    if (--_refCount == 0) {
-      delete this;
-      return 0;
+  bool cancel() override {
+    if (tryCancelTimer()) {
+      endTimer();
+      return true;
     } else {
-      return _refCount;
+      return false;
     }
   }
 
-  void setHandle(TimerHandle *handle) { _handle = handle; }
+  static void callback(TimerHandle *handle) { // timer entry
+    auto timerFuture = (TimerFutureBase<R> *)(handle->data());
+    timerFuture->process();
+  }
+
+  virtual void process() {
+    startTimer();
+    endTimer();
+  }
+
+  virtual void startTimer() = 0;
+
+  virtual bool tryCancelTimer() {
+    if (_handle->cancel()) {
+      _promise.set_exception(
+          std::make_exception_ptr(FutureCanceledError("canceled")));
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  virtual void endTimer() {
+    tryCallDoneCallback();
+    this->subRef();
+  }
 
   using DoneCallback = typename Future<R>::DoneCallback;
   void setDoneCallback(DoneCallback callback) override {
-    if (done()) {
+    if (callNowOrSet(callback)) {
       callback(this);
-    } else {
-      _doneCallback = callback;
     }
   }
 
-  void callDoneCallback() {
-    if (_doneCallback) {
+  virtual bool callNowOrSet(DoneCallback &callback) {
+    if (done()) {
+      return true;
+    } else {
+      _doneCallback = callback;
+      return false;
+    }
+  }
+
+  void tryCallDoneCallback() {
+    if (hasDoneCallback()) {
       _doneCallback(this);
     }
   }
+
+  virtual bool hasDoneCallback() { return (bool)_doneCallback; }
+
+  size_t refCount() const { return _refCount; }
+
+  size_t addRef() { return doAddRef(); }
+  size_t subRef() {
+    if (doSubRef() == 0) {
+      delete this;
+      return 0;
+    } else {
+      return refCount();
+    }
+  }
+
+  virtual size_t doAddRef() { return ++_refCount; }
+  virtual size_t doSubRef() { return --_refCount; }
+
+  void setHandle(TimerHandle *handle) { _handle = handle; }
 
 protected:
   std::promise<R> _promise;
@@ -116,7 +138,7 @@ public:
     this->_promise.set_value(_f());
   }
 
-  virtual void startTimer() {
+  virtual void startTimer() override {
     try {
       this->template setPromise<R>();
     } catch (...) {
@@ -133,13 +155,24 @@ public:
   using typename TimerFuture<R>::F;
   TimerFutureThreadSafe(F &f) : TimerFuture<R>(f) {}
 
-  virtual size_t addRef() override {
+  virtual size_t doAddRef() override {
     std::lock_guard<std::mutex> lock(_mutex);
-    return TimerFuture<R>::addRef();
+    return TimerFuture<R>::doAddRef();
   }
-  virtual size_t subRef() override {
+  virtual size_t doSubRef() override {
     std::lock_guard<std::mutex> lock(_mutex);
-    return TimerFuture<R>::subRef();
+    return TimerFuture<R>::doSubRef();
+  }
+
+  using DoneCallback = typename Future<R>::DoneCallback;
+  virtual bool callNowOrSet(DoneCallback &callback) override {
+    std::lock_guard<std::mutex> lock(_mutex);
+    return TimerFuture<R>::callNowOrSet(callback);
+  }
+
+  virtual bool hasDoneCallback() override {
+    std::lock_guard<std::mutex> lock(_mutex);
+    return TimerFuture<R>::hasDoneCallback();
   }
 
 protected:

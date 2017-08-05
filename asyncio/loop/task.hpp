@@ -19,7 +19,7 @@ public:
   virtual ~Task() {}
 
   bool done() const override { return this->_done; }
-  void processTimer() override { startTimer(); }
+  void process() override { startTimer(); }
   void startTimer() override {
     _coHolder = runCoro();
     _coHolder.setP(this);
@@ -37,7 +37,7 @@ public:
       this->_promise.set_exception(std::current_exception());
     }
     this->_done = true;
-    this->callDoneCallback();
+    this->tryCallDoneCallback();
   }
 
   template <class T>

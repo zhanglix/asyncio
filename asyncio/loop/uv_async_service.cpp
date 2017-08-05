@@ -94,8 +94,6 @@ void UVAsyncService::close() {
     throw LoopBusyError("UVAsyncService busy.");
   }
 
-  processTimers(); // clean canceled handles;
-
   uv_close((uv_handle_t *)(_uvAsync), [](uv_handle_t *h) {
     auto handle = (uv_async_t *)h;
     delete handle;
