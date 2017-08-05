@@ -1,11 +1,11 @@
 #pragma once
 
 #include <mutex>
-#include <queue>
 #include <uv.h>
 
 #include <asyncio/common.hpp>
 
+#include "extended_queue.hpp"
 #include "loop_core.hpp"
 
 BEGIN_ASYNCIO_NAMESPACE;
@@ -25,7 +25,10 @@ public:
 
   void pushTimer(UVASyncTimerHandle *handle);
   UVASyncTimerHandle *popTimer();
-  void callTimers();
+  bool eraseTimer(UVASyncTimerHandle *handle);
+
+  void processTimers();
+  void timerCanceled(UVASyncTimerHandle *handle);
 
   void close();
 
@@ -34,6 +37,6 @@ protected:
   uv_async_t *_uvAsync;
   size_t _activeHandles;
   std::mutex _mutex;
-  std::queue<UVASyncTimerHandle *> _queue;
+  ExtendedQueue<UVASyncTimerHandle *> _queue;
 };
 END_ASYNCIO_NAMESPACE;

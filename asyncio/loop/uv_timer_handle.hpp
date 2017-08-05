@@ -55,7 +55,7 @@ public:
 
   bool cancel() override;
   void completeTimer() override;
-  bool completeUnlessCanceled();
+  bool completeUnlessDone();
 
 protected:
   UVAsyncService *_service;

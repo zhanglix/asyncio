@@ -18,9 +18,7 @@ public:
 
   virtual ~Task() {}
 
-  bool done() const override {
-    return this->_done && TimerFutureBase<R>::done();
-  }
+  bool done() const override { return this->_done; }
   void processTimer() override { startTimer(); }
   void startTimer() override {
     _coHolder = runCoro();
@@ -29,7 +27,7 @@ public:
   }
   void endTimer() override {
     this->_done = true;
-    this->callDoneCallback();
+    TimerFutureBase<R>::endTimer();
   }
 
   SubRefCoro<Task, A> runCoro() {
@@ -38,7 +36,8 @@ public:
     } catch (...) {
       this->_promise.set_exception(std::current_exception());
     }
-    endTimer();
+    this->_done = true;
+    this->callDoneCallback();
   }
 
   template <class T>

@@ -6,6 +6,7 @@ add_executable(
   trivial_loop.hpp trivial_loop.cpp
   spy_test.cpp uv_test.cpp
   uv_loop_core_test.cpp
+  queue_test.cpp
   )
   
 target_link_libraries (loop_test  

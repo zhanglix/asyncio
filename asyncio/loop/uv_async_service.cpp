@@ -24,7 +24,7 @@ void UVAsyncService::setupService() {
   uv_async_t *uvAsync = new uv_async_t;
   int err = uv_async_init(_uvLoop, uvAsync, [](uv_async_t *h) {
     auto service = (UVAsyncService *)(h->data);
-    service->callTimers();
+    service->processTimers();
   });
   if (err != 0) {
     delete uvAsync;
@@ -66,7 +66,12 @@ UVASyncTimerHandle *UVAsyncService::popTimer() {
   }
 }
 
-void UVAsyncService::callTimers() {
+bool UVAsyncService::eraseTimer(UVASyncTimerHandle *handle) {
+  lock_guard<mutex> lock(_mutex);
+  return _queue.erase(handle);
+}
+
+void UVAsyncService::processTimers() {
   while (true) {
     UVASyncTimerHandle *handle = popTimer();
     if (handle) {
@@ -78,10 +83,18 @@ void UVAsyncService::callTimers() {
   };
 }
 
+void UVAsyncService::timerCanceled(UVASyncTimerHandle *handle) {
+  if (eraseTimer(handle)) {
+    handle->subRef();
+  }
+}
+
 void UVAsyncService::close() {
   if (_activeHandles > 0) {
     throw LoopBusyError("UVAsyncService busy.");
   }
+
+  processTimers(); // clean canceled handles;
 
   uv_close((uv_handle_t *)(_uvAsync), [](uv_handle_t *h) {
     auto handle = (uv_async_t *)h;

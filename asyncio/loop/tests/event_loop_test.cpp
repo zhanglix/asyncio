@@ -86,17 +86,31 @@ TEST_CASE("event loop done callback", "[callback]") {
   Future<void> *done = nullptr;
   auto onDone = [&](Future<void> *h) { done = h; };
   auto doNothing = [] {};
-  auto coNothing = []() -> coro<void> { co_return; }();
+  auto coNothing = []() -> coro<void> { co_return; };
   Future<void> *fut = nullptr;
   SECTION("setDoneCallback before future.done()") {
     SECTION("soon") { fut = loop.callSoon(doNothing); }
     SECTION("later") { fut = loop.callLater(1, doNothing); }
     SECTION("threadSafe") { fut = loop.callSoonThreadSafe(doNothing); }
-    SECTION("task") { fut = loop.createTask(coNothing); }
-    SECTION("task.later") { fut = loop.createTaskLater(1, coNothing); }
-    SECTION("task.threadSafe") { fut = loop.createTaskThreadSafe(coNothing); }
+    SECTION("task") { fut = loop.createTask(coNothing()); }
+    SECTION("task.later") { fut = loop.createTaskLater(1, coNothing()); }
+    SECTION("task.threadSafe") { fut = loop.createTaskThreadSafe(coNothing()); }
     REQUIRE(fut);
     fut->setDoneCallback(onDone);
+    loop.runUntilDone(fut);
+    fut->release();
+  }
+
+  SECTION("setDoneCallback before future.cancel()") {
+    SECTION("soon") { fut = loop.callSoon(doNothing); }
+    SECTION("later") { fut = loop.callLater(1, doNothing); }
+    SECTION("threadSafe") { fut = loop.callSoonThreadSafe(doNothing); }
+    SECTION("task") { fut = loop.createTask(coNothing()); }
+    SECTION("task.later") { fut = loop.createTaskLater(1, coNothing()); }
+    SECTION("task.threadSafe") { fut = loop.createTaskThreadSafe(coNothing()); }
+    REQUIRE(fut);
+    fut->setDoneCallback(onDone);
+    REQUIRE(fut->cancel());
     loop.runUntilDone(fut);
     fut->release();
   }
@@ -104,9 +118,9 @@ TEST_CASE("event loop done callback", "[callback]") {
     SECTION("soon") { fut = loop.callSoon(doNothing); }
     SECTION("later") { fut = loop.callLater(1, doNothing); }
     SECTION("threadSafe") { fut = loop.callSoonThreadSafe(doNothing); }
-    SECTION("task") { fut = loop.createTask(coNothing); }
-    SECTION("task.later") { fut = loop.createTaskLater(1, coNothing); }
-    SECTION("task.threadSafe") { fut = loop.createTaskThreadSafe(coNothing); }
+    SECTION("task") { fut = loop.createTask(coNothing()); }
+    SECTION("task.later") { fut = loop.createTaskLater(1, coNothing()); }
+    SECTION("task.threadSafe") { fut = loop.createTaskThreadSafe(coNothing()); }
     REQUIRE(fut);
     loop.runUntilDone(fut);
     fut->setDoneCallback(onDone);

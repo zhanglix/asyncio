@@ -94,13 +94,16 @@ size_t UVASyncTimerHandle::subRef() {
 }
 
 bool UVASyncTimerHandle::cancel() {
-  std::lock_guard<std::mutex> lock(_mutex);
-  return UVTimerHandleBase::cancel();
+  if (completeUnlessDone()) {
+    _service->timerCanceled(this);
+    return true;
+  }
+  return false;
 }
 
 void UVASyncTimerHandle::completeTimer() { _done = true; }
 
-bool UVASyncTimerHandle::completeUnlessCanceled() {
+bool UVASyncTimerHandle::completeUnlessDone() {
   std::lock_guard<std::mutex> lock(_mutex);
   if (!_done) {
     _done = true;
@@ -110,7 +113,7 @@ bool UVASyncTimerHandle::completeUnlessCanceled() {
 }
 
 void UVASyncTimerHandle::runCallBack() {
-  if (completeUnlessCanceled()) {
+  if (completeUnlessDone()) {
     UVTimerHandleBase::runCallBack();
   }
 }
