@@ -29,7 +29,7 @@ public:
 
   virtual void operator()() = 0;
 
-  bool done() override { return _handle->done(); }
+  bool done() const override { return _handle->done(); }
   bool cancel() override {
     if (_handle->cancel()) {
       _promise.set_exception(

@@ -18,7 +18,7 @@ public:
 
   virtual ~Task() {}
 
-  bool done() override {
+  bool done() const override {
     return this->_done && TimerFutureBase<R>::done();
   }
   void operator()() override {

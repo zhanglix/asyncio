@@ -14,7 +14,7 @@ public:
   UVTimerHandleBase(TimerCallback callback, void *data)
       : TimerHandle(data), _callback(callback), _done(false) {}
   virtual void runCallBack() { (*_callback)(this); }
-  bool done() override { return _done; }
+  bool done() const override { return _done; }
   bool cancel() override;
   virtual void completeTimer() = 0;
 

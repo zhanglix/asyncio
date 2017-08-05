@@ -27,7 +27,7 @@ public:
   }
   virtual void recycle() { delete this; }
 
-  virtual bool done() = 0;
+  virtual bool done() const= 0;
   virtual bool cancel() = 0;
 
   virtual void reset(void *data = nullptr) {
