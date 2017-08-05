@@ -65,11 +65,15 @@ public:
   }
   void setHandle(TimerHandle *handle) { _handle = handle; }
 
+  using DoneCallback = typename Future<R>::DoneCallback;
+  void setDoneCallback(DoneCallback callback) override {}
+
 protected:
   std::promise<R> _promise;
   std::future<R> _future;
   TimerHandle *_handle;
   size_t _refCount;
+  DoneCallback _doneCallbacks;
 };
 
 template <class R> class TimerFuture : public TimerFutureBase<R> {
