@@ -7,7 +7,7 @@ BEGIN_ASYNCIO_NAMESPACE;
 class FutureBase {
 public:
   virtual ~FutureBase() {}
-  virtual bool completed() = 0;
+  virtual bool done() = 0;
   virtual bool cancel() = 0;
   virtual void release() = 0;
 };

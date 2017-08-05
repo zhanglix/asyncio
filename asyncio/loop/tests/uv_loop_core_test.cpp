@@ -47,7 +47,7 @@ TEST_CASE("uv_loop_core", "[loop]") {
     LOG_DEBUG("before runOneIteration()");
     lc->runOneIteration();
     CHECK(handle->data() == handle);
-    CHECK(handle->completed());
+    CHECK(handle->done());
     CHECK_FALSE(handle->cancel());
     LOG_DEBUG("before close() exepct throw");
     REQUIRE_THROWS_AS(lc->close(), LoopBusyError);
@@ -76,7 +76,7 @@ TEST_CASE("uv_loop_core", "[loop]") {
     }
     CHECK(handle->cancel());
     LOG_DEBUG("before runOneIteration()");
-    CHECK(handle->completed());
+    CHECK(handle->done());
 
     // tricks to prevent from hanging to wait async_send
     lc->callSoon(callback, nullptr)->subRef();
@@ -104,7 +104,7 @@ TEST_CASE("uv_loop_core", "[loop]") {
           ->subRef();
     });
     lc->runOneIteration();
-    CHECK(handle->completed());
+    CHECK(handle->done());
     CHECK(handle->data() == data);
     handle->subRef();
     t.join();

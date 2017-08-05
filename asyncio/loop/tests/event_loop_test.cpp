@@ -20,7 +20,7 @@ namespace eventloop_test {
 TEST_CASE("event_loop run", "[examples]") {
   EventLoop loop;
   auto fut = loop.callSoon([](int a, int b) { return a + b; }, 3, 5);
-  SECTION("run until complete") { loop.runUntilComplete(fut); }
+  SECTION("run until complete") { loop.runUntilDone(fut); }
   SECTION("run until stop called") {
     loop.callSoon([&] { loop.stop(); })->release();
     loop.runForever();
@@ -41,7 +41,7 @@ TEST_CASE("event_loop createTask", "[examples]") {
   SECTION("later") { task = loop.createTaskLater(1, foo(3, 5)); }
   SECTION("thread safe") { task = loop.createTaskThreadSafe(foo(3, 5)); }
 
-  loop.runUntilComplete(task);
+  loop.runUntilDone(task);
   CHECK(task->get() == 8);
   task->release();
 }
@@ -55,11 +55,11 @@ TEST_CASE("event_loop createTask delayed", "[examples]") {
   };
   Future<int> *task = loop.createTask(foo(6, 2));
   auto second = loop.callSoon([&] { LOG_DEBUG("do nothing"); });
-  loop.runUntilComplete(second);
-  CHECK_FALSE(task->completed());
+  loop.runUntilDone(second);
+  CHECK_FALSE(task->done());
   auto third = loop.callSoon([&] { awaitable.resume(); });
-  loop.runUntilComplete(task);
-  REQUIRE(third->completed());
+  loop.runUntilDone(task);
+  REQUIRE(third->done());
   CHECK(task->get() == 8);
   task->release();
   second->release();
@@ -77,7 +77,7 @@ TEST_CASE("eventloop", "[release]") {
   }
 
   auto last = loop.callSoon([] {});
-  loop.runUntilComplete(last);
+  loop.runUntilDone(last);
   last->release();
 }
 
@@ -93,20 +93,20 @@ TEST_CASE("eventloop timer", "[loop][trivial]") {
   SECTION("int") {
     auto fut = loop.callSoon([](int in) { return in; }, 3);
     LOG_DEBUG("after callSoon()");
-    CHECK_FALSE(fut->completed());
+    CHECK_FALSE(fut->done());
     Verify(Method(spy, callSoon)).Once();
     SECTION("done") {
       LOG_DEBUG("before runOneIteration()");
-      loop.runUntilComplete(fut);
+      loop.runUntilDone(fut);
       LOG_DEBUG("after runOneIteration()");
 
-      CHECK(fut->completed());
+      CHECK(fut->done());
       CHECK(fut->get() == 3);
       CHECK_FALSE(fut->cancel());
     }
     SECTION("canceled") {
       CHECK(fut->cancel());
-      CHECK(fut->completed());
+      CHECK(fut->done());
       CHECK_THROWS_AS(fut->get(), FutureCanceledError);
     }
 
@@ -119,19 +119,19 @@ TEST_CASE("eventloop timer", "[loop][trivial]") {
   SECTION("void") {
     int out = 0;
     auto fut = loop.callSoon([](int in, int &out) { out = in; }, 3, ref(out));
-    CHECK_FALSE(fut->completed());
+    CHECK_FALSE(fut->done());
     Verify(Method(spy, callSoon)).Once();
 
     SECTION("done") {
-      loop.runUntilComplete(fut);
-      CHECK(fut->completed());
+      loop.runUntilDone(fut);
+      CHECK(fut->done());
       CHECK_NOTHROW(fut->get());
       CHECK_FALSE(fut->cancel());
       CHECK(out == 3);
     }
     SECTION("canceled") {
       CHECK(fut->cancel());
-      CHECK(fut->completed());
+      CHECK(fut->done());
       CHECK_THROWS_AS(fut->get(), FutureCanceledError);
       CHECK(out == 0);
     }
@@ -142,7 +142,7 @@ TEST_CASE("eventloop timer", "[loop][trivial]") {
   SECTION("callLater") {
     Spy(Method(spy, callLater));
     auto fut = loop.callLater(10, [](int in) { return in; }, 3);
-    CHECK_FALSE(fut->completed());
+    CHECK_FALSE(fut->done());
     Verify(Method(spy, callLater)).Once();
     REQUIRE_NOTHROW(fut->release());
     Verify(Method(spy, recycleTimerHandle)).Exactly(0);
@@ -155,7 +155,7 @@ TEST_CASE("eventloop timer", "[loop][trivial]") {
     Spy(Method(spy, callSoonThreadSafe));
     TimerFutureThreadSafe<int> *fut =
         loop.callSoonThreadSafe([](int in) { return in; }, 3);
-    CHECK_FALSE(fut->completed());
+    CHECK_FALSE(fut->done());
     Verify(Method(spy, callSoonThreadSafe)).Once();
 
     LOG_DEBUG("before fut->release()");

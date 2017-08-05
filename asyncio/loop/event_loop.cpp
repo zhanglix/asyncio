@@ -15,8 +15,8 @@ EventLoop::~EventLoop() {
   }
 }
 
-void EventLoop::runUntilComplete(FutureBase *future) {
-  while (!future->completed()) {
+void EventLoop::runUntilDone(FutureBase *future) {
+  while (!future->done()) {
     _lc->runOneIteration();
   }
 }

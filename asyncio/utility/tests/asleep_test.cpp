@@ -18,7 +18,7 @@ TEST_CASE("asleep", "[utility]") {
   auto first = loop.createTask(foo(30, "A"));
   loop.createTask(foo(20, "B"))->release();
   loop.createTask(foo(10, "C"))->release();
-  loop.runUntilComplete(first);
+  loop.runUntilDone(first);
   first->release();
   CHECK(output == "CBA");
 }

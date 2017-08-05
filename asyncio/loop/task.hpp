@@ -18,8 +18,8 @@ public:
 
   virtual ~Task() {}
 
-  bool completed() override {
-    return this->_done && TimerFutureBase<R>::completed();
+  bool done() override {
+    return this->_done && TimerFutureBase<R>::done();
   }
   void operator()() override {
     _coHolder = runCoro();

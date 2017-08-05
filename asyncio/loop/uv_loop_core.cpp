@@ -22,7 +22,7 @@ UVLoopCore::UVLoopCore(uv_loop_t *uvLoop) : _activeHandles(0) {
 
 UVLoopCore::~UVLoopCore() { close(); }
 
-void UVLoopCore::timerCompleted() { _loop->stop_flag = 1; }
+void UVLoopCore::timerDone() { _loop->stop_flag = 1; }
 void UVLoopCore::restoreLoop() { _loop->stop_flag = 0; }
 void UVLoopCore::runOneIteration() {
   restoreLoop(); // tricks to fix uv_run() haning

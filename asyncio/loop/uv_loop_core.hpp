@@ -26,7 +26,7 @@ public:
                                  void *data) override;
 
   uv_loop_t *getUVLoop() const { return _loop; }
-  void timerCompleted();
+  void timerDone();
   void restoreLoop();
 
   size_t addHandle() { return ++_activeHandles; }

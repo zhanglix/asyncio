@@ -12,15 +12,15 @@ BEGIN_ASYNCIO_NAMESPACE;
 class UVTimerHandleBase : public TimerHandle {
 public:
   UVTimerHandleBase(TimerCallback callback, void *data)
-      : TimerHandle(data), _callback(callback), _completed(false) {}
+      : TimerHandle(data), _callback(callback), _done(false) {}
   virtual void runCallBack() { (*_callback)(this); }
-  bool completed() override { return _completed; }
+  bool done() override { return _done; }
   bool cancel() override;
   virtual void completeTimer() = 0;
 
 protected:
   TimerCallback _callback;
-  bool _completed;
+  bool _done;
 };
 
 class UVTimerHandle : public UVTimerHandleBase {

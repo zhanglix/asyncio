@@ -19,7 +19,7 @@ public:
   EventLoop(LoopCore *lc = nullptr, bool own = true);
   ~EventLoop();
 
-  void runUntilComplete(FutureBase *future);
+  void runUntilDone(FutureBase *future);
   void runForever();
   void stop();
 
@@ -101,9 +101,3 @@ private:
 };
 
 END_ASYNCIO_NAMESPACE;
-;
-;
-;
-;
-;
-;

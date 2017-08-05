@@ -36,7 +36,7 @@ public:
     virtual void recycle() override { _loop->recycleTimerHandle(this); }
 
     bool cancel() override { return _loop->cancelTimer(this); }
-    bool completed() override { return _state != State::READY; }
+    bool done() override { return _state != State::READY; }
 
     State getState() const { return _state; }
     void setState(TrivialTimerHandle::State state) { _state = state; }

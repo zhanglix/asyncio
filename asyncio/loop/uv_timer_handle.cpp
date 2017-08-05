@@ -5,7 +5,7 @@
 USING_ASYNNCIO_NAMESPACE;
 
 bool UVTimerHandleBase::cancel() {
-  if (_completed) {
+  if (_done) {
     return false;
   } else {
     completeTimer();
@@ -27,14 +27,14 @@ void UVTimerHandle::runCallBack() {
 
 void UVTimerHandle::setupTimer(uint64_t later) {
   addRef();
-  _completed = false;
+  _done = false;
   uvTimerStart(later);
 }
 
 void UVTimerHandle::completeTimer() {
   uvTimerStop();
-  _completed = true;
-  _loop->timerCompleted();
+  _done = true;
+  _loop->timerDone();
   subRef();
 }
 
@@ -98,12 +98,12 @@ bool UVASyncTimerHandle::cancel() {
   return UVTimerHandleBase::cancel();
 }
 
-void UVASyncTimerHandle::completeTimer() { _completed = true; }
+void UVASyncTimerHandle::completeTimer() { _done = true; }
 
 bool UVASyncTimerHandle::completeUnlessCanceled() {
   std::lock_guard<std::mutex> lock(_mutex);
-  if (!_completed) {
-    _completed = true;
+  if (!_done) {
+    _done = true;
     return true;
   }
   return false;
