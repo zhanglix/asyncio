@@ -45,7 +45,7 @@ public:
     }
   }
 
-  static void callback(TimerHandle *handle) { // timer entry
+  static void processEntry(TimerHandle *handle) {
     auto timerFuture = (TimerFutureBase<R> *)(handle->data());
     timerFuture->process();
   }

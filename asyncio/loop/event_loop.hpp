@@ -82,15 +82,15 @@ protected:
   template <bool threadSafe, class Fut>
   std::enable_if_t<threadSafe> setupFuture(Fut *fut, uint64_t) {
     fut->addRef();
-    auto handle = _lc->callSoonThreadSafe(fut->callback, fut);
+    auto handle = _lc->callSoonThreadSafe(fut->processEntry, fut);
     fut->setHandle(handle);
   }
 
   template <bool threadSafe, class Fut>
   std::enable_if_t<!threadSafe> setupFuture(Fut *fut, uint64_t ms) {
     fut->addRef();
-    auto handle = ms > 0 ? _lc->callLater(ms, fut->callback, fut)
-                         : _lc->callSoon(fut->callback, fut);
+    auto handle = ms > 0 ? _lc->callLater(ms, fut->processEntry, fut)
+                         : _lc->callSoon(fut->processEntry, fut);
     fut->setHandle(handle);
   }
 
