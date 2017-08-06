@@ -41,7 +41,7 @@ public:
     State getState() const { return _state; }
     void setState(TrivialTimerHandle::State state) { _state = state; }
 
-    void reset(void *data = nullptr) override {
+    void reset(void *data = nullptr) {
       TimerHandle::reset(data);
       _state = State::READY;
     }

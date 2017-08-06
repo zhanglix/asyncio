@@ -5,39 +5,22 @@
 
 #include <asyncio/common.hpp>
 
+#include "abstract_handle.hpp"
 #include "loop_core.hpp"
 
 BEGIN_ASYNCIO_NAMESPACE;
-class TimerHandle {
+class TimerHandle : public BasicHandle {
 public:
-  TimerHandle(void *data) : _data(data), _refCount(1) {}
-  virtual ~TimerHandle() {}
-
+  TimerHandle(void *data) : _data(data) {}
   void *data() const { return _data; }
   void setData(void *data) { _data = data; }
-
-  virtual size_t refCount() const { return _refCount; }
-  virtual size_t addRef() { return ++_refCount; }
-  virtual size_t subRef() {
-    size_t refs = --_refCount;
-    if (refs == 0) {
-      recycle();
-    }
-    return refs;
-  }
-  virtual void recycle() { delete this; }
-
-  virtual bool done() const= 0;
-  virtual bool cancel() = 0;
-
-  virtual void reset(void *data = nullptr) {
+  void reset(void *data = nullptr) {
     _data = data;
-    _refCount = 1;
+    BasicHandle::reset();
   }
 
 protected:
   void *_data;
-  size_t _refCount;
 };
 
 END_ASYNCIO_NAMESPACE;

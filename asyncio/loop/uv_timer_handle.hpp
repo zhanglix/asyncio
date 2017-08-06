@@ -48,8 +48,8 @@ public:
                      void *data);
   ~UVASyncTimerHandle();
 
-  size_t addRef() override;
-  size_t subRef() override;
+  // size_t addRef() override;
+  // size_t subRef() override;
 
   void runCallBack() override;
 

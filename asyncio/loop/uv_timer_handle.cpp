@@ -84,14 +84,14 @@ UVASyncTimerHandle::UVASyncTimerHandle(UVAsyncService *service,
 
 UVASyncTimerHandle::~UVASyncTimerHandle() { _service->subHandle(); }
 
-size_t UVASyncTimerHandle::addRef() {
-  std::lock_guard<std::mutex> lock(_mutex);
-  return TimerHandle::addRef();
-}
-size_t UVASyncTimerHandle::subRef() {
-  std::lock_guard<std::mutex> lock(_mutex);
-  return TimerHandle::subRef();
-}
+// size_t UVASyncTimerHandle::addRef() {
+//   std::lock_guard<std::mutex> lock(_mutex);
+//   return TimerHandle::addRef();
+// }
+// size_t UVASyncTimerHandle::subRef() {
+//   std::lock_guard<std::mutex> lock(_mutex);
+//   return TimerHandle::subRef();
+// }
 
 bool UVASyncTimerHandle::cancel() {
   if (completeUnlessDone()) {
