@@ -23,25 +23,6 @@ protected:
   bool _done;
 };
 
-class UVTimerHandle : public UVTimerHandleBase {
-public:
-  UVTimerHandle(UVLoopCore *lc, TimerCallback callback, void *data);
-  ~UVTimerHandle();
-  void runCallBack() override;
-
-  void uvTimerInit();
-  void uvTimerStart(uint64_t later);
-  void uvTimerStop();
-  void close();
-
-  void setupTimer(uint64_t later);
-  void completeTimer() override;
-
-protected:
-  UVLoopCore *_loop;
-  uv_timer_t *_uv_timer;
-};
-
 class UVASyncTimerHandle : public UVTimerHandleBase {
 public:
   UVASyncTimerHandle(UVAsyncService *service, TimerCallback callback,

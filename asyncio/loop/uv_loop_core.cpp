@@ -18,6 +18,7 @@ UVLoopCore::UVLoopCore(uv_loop_t *uvLoop) : _activeHandles(0) {
     _loop = uvLoop;
   }
   _service = new UVAsyncService(_loop);
+  _timerService = new UVTimerService(_loop);
 }
 
 UVLoopCore::~UVLoopCore() { close(); }
@@ -33,7 +34,9 @@ void UVLoopCore::close() { closeUVLoopT(); }
 
 size_t UVLoopCore::activeHandlesCount() {
   size_t async_count = _service ? _service->activeHandlesCount() : 0;
-  return _activeHandles + async_count;
+  size_t timer_count = _timerService ? _timerService->activeHandlesCount() : 0;
+
+  return timer_count + async_count;
 }
 
 uint64_t UVLoopCore::time() { return uv_now(_loop); }
@@ -49,9 +52,7 @@ TimerHandle *UVLoopCore::callSoonThreadSafe(TimerCallback callback,
 
 TimerHandle *UVLoopCore::callLater(uint64_t milliseconds,
                                    TimerCallback callback, void *data) {
-  auto handle = new UVTimerHandle(this, callback, data);
-  handle->setupTimer(milliseconds);
-  return handle;
+  return _timerService->callLater(milliseconds, callback, data);
 }
 
 void UVLoopCore::closeUVLoopT() {
@@ -62,6 +63,11 @@ void UVLoopCore::closeUVLoopT() {
     _service->close();
     delete _service;
     _service = nullptr;
+  }
+  if (_timerService) {
+    _timerService->close();
+    delete _timerService;
+    _timerService = nullptr;
   }
   if (_loop) {
     runOneIteration(); // clear pending closing callback;

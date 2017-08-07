@@ -11,7 +11,7 @@
 BEGIN_ASYNCIO_NAMESPACE;
 class TimerHandle : public BasicHandle {
 public:
-  TimerHandle(void *data) : _data(data) {}
+  TimerHandle(void *data = nullptr) : _data(data) {}
   void *data() const { return _data; }
   void setData(void *data) { _data = data; }
   void reset(void *data = nullptr) {

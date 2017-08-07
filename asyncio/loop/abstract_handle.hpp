@@ -51,20 +51,7 @@ protected:
 };
 
 class BasicHandle : public HandleBase {
-public:
-  void startTimer() {
-    addRef();
-    doStartTimer();
-  }
-
-  virtual bool process() {
-    if (tryTransferState(READY, RUNNING) && executeTimer()) {
-      endTimer();
-      return true; // to be removed
-    }
-    return false;
-  }
-
+public: // DON'T add any public method here
   virtual bool cancel() override {
     if (tryTransferState(READY, CANCELING) && cancelTimer()) {
       endTimer();
@@ -73,7 +60,20 @@ public:
     return false;
   }
 
-protected:
+protected: // implementing details ...
+  virtual bool process() {
+    if (tryTransferState(READY, RUNNING) && executeTimer()) {
+      endTimer();
+      return true; // to be removed
+    }
+    return false;
+  }
+
+  void startTimer() {
+    addRef();
+    doStartTimer();
+  }
+
   virtual void doStartTimer(){}; // eg: notify service
   virtual void doStopTimer(){};  // eg: notify service
   virtual bool executeTimer() {  // return false for asynchrouns execution!
