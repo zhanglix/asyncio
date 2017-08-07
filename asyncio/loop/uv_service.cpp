@@ -12,24 +12,12 @@ void UVService::close() {
 void UVService::addHandle() { ++_activeHandles; }
 void UVService::subHandle() { --_activeHandles; }
 
-void UVService::startTimer(UVTimerHandleImp *handle) { addHandle(); }
+void UVService::startTimer(UVTimerHandleImp *handle) {
+  addHandle();
+  doStartTimer(handle);
+}
 void UVService::stopTimer(UVTimerHandleImp *handle) {
+  doStopTimer(handle);
   // trick to prevent uvloop from hanging
   _uvLoop->stop_flag = 1;
 }
-UVTimerHandleImp::UVTimerHandleImp(TimerCallback callback, void *data) {
-  reset(callback, data);
-}
-void UVTimerHandleImp::reset(TimerCallback callback, void *data) {
-  _callback = callback;
-  TimerHandle::reset(data);
-}
-
-void UVTimerHandleImp::processTimer() { process(); }
-
-void UVTimerHandleImp::setupTimer() { startTimer(); }
-
-bool UVTimerHandleImp::executeTimer() {
-  (*_callback)(this);
-  return true;
-};

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <asyncio/common.hpp>
+#include <cstddef>
+#include <cstdint>
 
 BEGIN_ASYNCIO_NAMESPACE;
 class TimerHandle;

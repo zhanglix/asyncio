@@ -28,8 +28,8 @@ public:
 
   TimerHandle *callSoon(TimerCallback callback, void *data);
 
-  void startTimer(UVTimerHandleImp *handle) override;
-  void stopTimer(UVTimerHandleImp *handle) override;
+  void doStartTimer(UVTimerHandleImp *handle) override;
+  void doStopTimer(UVTimerHandleImp *handle) override;
 
   void close() override;
 

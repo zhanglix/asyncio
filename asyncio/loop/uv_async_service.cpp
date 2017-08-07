@@ -23,18 +23,16 @@ TimerHandle *UVAsyncService::callSoon(TimerCallback callback, void *data) {
   return (TimerHandle *)handle;
 }
 
-void UVAsyncService::startTimer(UVTimerHandleImp *handle) {
-  UVService::startTimer(handle);
+void UVAsyncService::doStartTimer(UVTimerHandleImp *handle) {
   handle->addRef();
   pushTimer(handle);
   uvAsyncSend();
 }
 
-void UVAsyncService::stopTimer(UVTimerHandleImp *handle) {
+void UVAsyncService::doStopTimer(UVTimerHandleImp *handle) {
   if (eraseTimer(handle)) {
     handle->subRef();
   }
-  UVService::stopTimer(handle);
 }
 
 void UVAsyncService::addHandle() {

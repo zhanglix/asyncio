@@ -1,46 +1,24 @@
 #pragma once
 
-#include <mutex>
-
 #include <asyncio/common.hpp>
 
+#include "loop_core.hpp"
 #include "timer_handle.hpp"
-#include "uv_loop_core.hpp"
 
 BEGIN_ASYNCIO_NAMESPACE;
 
-class UVTimerHandleBase : public TimerHandle {
+class UVTimerHandleImp : public TimerHandle {
 public:
-  UVTimerHandleBase(TimerCallback callback, void *data)
-      : TimerHandle(data), _callback(callback), _done(false) {}
-  virtual void runCallBack() { (*_callback)(this); }
-  bool done() const override { return _done; }
-  bool cancel() override;
-  virtual void completeTimer() = 0;
+  UVTimerHandleImp(TimerCallback callback = nullptr, void *data = nullptr);
+  void reset(TimerCallback callback, void *data);
+
+  void processTimer(); // promote protected process() to public
+  void setupTimer();   // promote protected startTimer() to public
 
 protected:
+  virtual bool executeTimer() override;
+
   TimerCallback _callback;
-  bool _done;
 };
-
-// class UVASyncTimerHandle : public UVTimerHandleBase {
-// public:
-//   UVASyncTimerHandle(UVAsyncService *service, TimerCallback callback,
-//                      void *data);
-//   ~UVASyncTimerHandle();
-
-//   // size_t addRef() override;
-//   // size_t subRef() override;
-
-//   void runCallBack() override;
-
-//   bool cancel() override;
-//   void completeTimer() override;
-//   bool completeUnlessDone();
-
-// protected:
-//   UVAsyncService *_service;
-//   std::mutex _mutex;
-// };
 
 END_ASYNCIO_NAMESPACE;

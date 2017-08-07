@@ -2,6 +2,7 @@
 #include <asyncio/common.hpp>
 #include <cstddef>
 #include <mutex>
+#include <utility>
 
 BEGIN_ASYNCIO_NAMESPACE;
 
@@ -49,6 +50,9 @@ protected: // implementing details ...
 
 template <class HB> class BasicHandleThreadSafe : public HB {
 public:
+  template <class... Args>
+  BasicHandleThreadSafe(Args &&... args) : HB(std::forward<Args>(args)...) {}
+
   virtual size_t doAddRef() override {
     std::lock_guard<std::mutex> lock(_mutex);
     return HB::doAddRef();
