@@ -7,6 +7,11 @@ UVTimerHandle::UVTimerHandle(UVTimerService *service) : _service(service) {
   uvTimerInit();
 }
 
+void UVTimerHandle::reset(uint64_t later, TimerCallback callback, void *data) {
+  _later = later;
+  UVTimerHandleImp::reset(callback, data);
+}
+
 void UVTimerHandle::doStartTimer() {
   uvTimerStart(_later);
   _service->startTimer(this);
@@ -52,10 +57,4 @@ UVTimerHandle::~UVTimerHandle() {
   close();
 }
 
-UVTimerService::UVTimerService(uv_loop_t *uvLoop)
-    : _uvLoop(uvLoop), _activeHandles(0) {}
-void UVTimerService::close() {
-  if (activeHandlesCount() > 0) {
-    throw LoopBusyError("UVTimerService Busy.");
-  }
-}
+UVTimerService::UVTimerService(uv_loop_t *uvLoop) : UVService(uvLoop) {}

@@ -6,41 +6,17 @@
 #include <asyncio/common.hpp>
 
 #include "loop_core.hpp"
-#include "timer_handle.hpp"
+#include "uv_service.hpp"
 
 BEGIN_ASYNCIO_NAMESPACE;
 class UVTimerService;
-class TimerHandleImp : public TimerHandle {
-public:
-  TimerHandleImp(TimerCallback callback = nullptr, void *data = nullptr) {
-    reset(callback, data);
-  }
-  void reset(TimerCallback callback, void *data) {
-    _callback = callback;
-    TimerHandle::reset(data);
-  }
 
-  void processEntry() { process(); }  // promote protected to public
-  void setupTimer() { startTimer(); } // promote protected to public
-
-protected:
-  virtual bool executeTimer() override {
-    (*_callback)(this);
-    return true;
-  };
-
-  TimerCallback _callback;
-};
-
-class UVTimerHandle : public TimerHandleImp {
+class UVTimerHandle : public UVTimerHandleImp {
 public:
   UVTimerHandle(UVTimerService *service);
   ~UVTimerHandle();
 
-  void reset(uint64_t later, TimerCallback callback, void *data) {
-    _later = later;
-    TimerHandleImp::reset(callback, data);
-  }
+  void reset(uint64_t later, TimerCallback callback, void *data);
 
 protected:
   virtual void doStartTimer() override; // eg: notify service
@@ -51,18 +27,15 @@ protected:
   void uvTimerStop();
   void close();
 
+protected:
   UVTimerService *_service;
   uv_timer_t _uv_timer;
   uint64_t _later;
 };
 
-class UVTimerService {
+class UVTimerService : public UVService {
 public:
   UVTimerService(uv_loop_t *uvLoop);
-
-  virtual void addHandle() { ++_activeHandles; }
-  virtual void subHandle() { --_activeHandles; }
-  size_t activeHandlesCount() { return _activeHandles; }
 
   TimerHandle *callLater(uint64_t later, TimerCallback callback, void *data) {
     auto h = new UVTimerHandle(this);
@@ -70,18 +43,5 @@ public:
     h->setupTimer();
     return (TimerHandle *)h;
   }
-  void startTimer(UVTimerHandle *) { addHandle(); }
-  void stopTimer(UVTimerHandle *) {
-    // trick to prevent uvloop from hanging
-    _uvLoop->stop_flag = 1;
-  }
-
-  void close();
-
-  uv_loop_t *getUVLoop() { return _uvLoop; }
-
-protected:
-  uv_loop_t *_uvLoop;
-  size_t _activeHandles;
 };
 END_ASYNCIO_NAMESPACE;
