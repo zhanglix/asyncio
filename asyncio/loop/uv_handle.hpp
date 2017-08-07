@@ -8,9 +8,9 @@
 
 BEGIN_ASYNCIO_NAMESPACE;
 class UVService;
-class UVTimerHandleBase : public TimerHandle {
+class UVHandle : public TimerHandle {
 public:
-  UVTimerHandleBase(UVService *service, TimerCallback callback = nullptr,
+  UVHandle(UVService *service, TimerCallback callback = nullptr,
                     void *data = nullptr);
   void reset(TimerCallback callback, void *data);
 

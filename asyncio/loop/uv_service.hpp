@@ -5,7 +5,7 @@
 
 #include <asyncio/common.hpp>
 
-#include "uv_timer_handle.hpp"
+#include "uv_handle.hpp"
 
 BEGIN_ASYNCIO_NAMESPACE;
 class UVService {
@@ -17,12 +17,12 @@ public:
   virtual void subHandle();
   size_t activeHandlesCount() { return _activeHandles; }
 
-  void startTimer(UVTimerHandleBase *);
-  void stopTimer(UVTimerHandleBase *);
+  void startTimer(UVHandle *);
+  void stopTimer(UVHandle *);
 
-  virtual void doStartTimer(UVTimerHandleBase *) {}
-  virtual void doStopTimer(UVTimerHandleBase *) {}
-  virtual void recycleHandle(UVTimerHandleBase *);
+  virtual void doStartTimer(UVHandle *) {}
+  virtual void doStopTimer(UVHandle *) {}
+  virtual void recycleHandle(UVHandle *);
 
   uv_loop_t *getUVLoop() { return _uvLoop; }
   virtual void close();

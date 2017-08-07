@@ -1,6 +1,6 @@
 #include "uv_async_service.hpp"
 #include "loop_exception.hpp"
-#include "uv_timer_handle.hpp"
+#include "uv_handle.hpp"
 
 using namespace std;
 USING_ASYNNCIO_NAMESPACE;
@@ -16,13 +16,13 @@ TimerHandle *UVAsyncService::callSoon(TimerCallback callback, void *data) {
   return (TimerHandle *)handle;
 }
 
-void UVAsyncService::doStartTimer(UVTimerHandleBase *handle) {
+void UVAsyncService::doStartTimer(UVHandle *handle) {
   handle->addRef();
   pushTimer(handle);
   uvAsyncSend();
 }
 
-void UVAsyncService::doStopTimer(UVTimerHandleBase *handle) {
+void UVAsyncService::doStopTimer(UVHandle *handle) {
   if (eraseTimer(handle)) {
     handle->subRef();
   }
@@ -54,7 +54,7 @@ void UVAsyncService::setupService() {
 
 void UVAsyncService::processTimers() {
   while (true) {
-    UVTimerHandleBase *handle = popTimer();
+    UVHandle *handle = popTimer();
     if (handle) {
       handle->processTimer();
       handle->subRef();
@@ -71,15 +71,15 @@ void UVAsyncService::uvAsyncSend() {
   }
 }
 
-void UVAsyncService::pushTimer(UVTimerHandleBase *handle) {
+void UVAsyncService::pushTimer(UVHandle *handle) {
   lock_guard<mutex> lock(_mutex);
   _queue.push(handle);
 }
 
-UVTimerHandleBase *UVAsyncService::popTimer() {
+UVHandle *UVAsyncService::popTimer() {
   lock_guard<mutex> lock(_mutex);
   if (!_queue.empty()) {
-    UVTimerHandleBase *handle = _queue.front();
+    UVHandle *handle = _queue.front();
     _queue.pop();
     return handle;
   } else {
@@ -87,7 +87,7 @@ UVTimerHandleBase *UVAsyncService::popTimer() {
   }
 }
 
-bool UVAsyncService::eraseTimer(UVTimerHandleBase *handle) {
+bool UVAsyncService::eraseTimer(UVHandle *handle) {
   lock_guard<mutex> lock(_mutex);
   return _queue.erase(handle);
 }
