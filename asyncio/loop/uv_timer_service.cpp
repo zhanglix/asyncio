@@ -3,9 +3,11 @@
 
 USING_ASYNNCIO_NAMESPACE;
 
-UVTimerHandle::UVTimerHandle(UVTimerService *service) : _service(service) {
+UVTimerHandle::UVTimerHandle(UVService *service) : UVTimerHandleBase(service) {
   uvTimerInit();
 }
+
+UVTimerHandle::~UVTimerHandle() { close(); }
 
 void UVTimerHandle::reset(uint64_t later, TimerCallback callback, void *data) {
   _later = later;
@@ -13,13 +15,13 @@ void UVTimerHandle::reset(uint64_t later, TimerCallback callback, void *data) {
 }
 
 void UVTimerHandle::doStartTimer() {
+  UVTimerHandleBase::doStartTimer();
   uvTimerStart(_later);
-  _service->startTimer(this);
 }
 
 void UVTimerHandle::doStopTimer() {
   uvTimerStop();
-  _service->stopTimer(this);
+  UVTimerHandleBase::doStopTimer();
 }
 
 void UVTimerHandle::uvTimerInit() {
@@ -50,11 +52,6 @@ void UVTimerHandle::uvTimerStop() {
 void UVTimerHandle::close() {
   uv_close((uv_handle_t *)&_uv_timer, nullptr);
   //  [](uv_handle_t *h) { delete (uv_timer_t *)h; });
-}
-
-UVTimerHandle::~UVTimerHandle() {
-  _service->subHandle();
-  close();
 }
 
 UVTimerService::UVTimerService(uv_loop_t *uvLoop) : UVService(uvLoop) {}

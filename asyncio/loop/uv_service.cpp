@@ -16,8 +16,14 @@ void UVService::startTimer(UVTimerHandleBase *handle) {
   addHandle();
   doStartTimer(handle);
 }
+
 void UVService::stopTimer(UVTimerHandleBase *handle) {
   doStopTimer(handle);
   // trick to prevent uvloop from hanging
   _uvLoop->stop_flag = 1;
+}
+
+void UVService::recycleHandle(UVTimerHandleBase *handle) {
+  subHandle();
+  delete handle;
 }

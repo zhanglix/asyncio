@@ -9,11 +9,10 @@
 #include "uv_service.hpp"
 
 BEGIN_ASYNCIO_NAMESPACE;
-class UVTimerService;
 
 class UVTimerHandle : public UVTimerHandleBase {
 public:
-  UVTimerHandle(UVTimerService *service);
+  UVTimerHandle(UVService *service);
   ~UVTimerHandle();
 
   void reset(uint64_t later, TimerCallback callback, void *data);
@@ -28,7 +27,6 @@ protected:
   void close();
 
 protected:
-  UVTimerService *_service;
   uv_timer_t _uv_timer;
   uint64_t _later;
 };

@@ -4,14 +4,7 @@
 
 using namespace std;
 USING_ASYNNCIO_NAMESPACE;
-// UVASyncTimerHandle ...
-UVASyncTimerHandle::UVASyncTimerHandle(UVService *service)
-    : _service(service) {}
-UVASyncTimerHandle::~UVASyncTimerHandle() { _service->subHandle(); }
 
-void UVASyncTimerHandle::doStartTimer() { _service->startTimer(this); }
-void UVASyncTimerHandle::doStopTimer() { _service->stopTimer(this); }
-// UVAsyncService Following ...
 UVAsyncService::UVAsyncService(uv_loop_t *uvLoop) : UVService(uvLoop) {
   setupService();
 }

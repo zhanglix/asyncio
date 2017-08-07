@@ -13,13 +13,8 @@ BEGIN_ASYNCIO_NAMESPACE;
 
 class UVASyncTimerHandle : public BasicHandleThreadSafe<UVTimerHandleBase> {
 public:
-  UVASyncTimerHandle(UVService *);
-  void doStartTimer() override;
-  void doStopTimer() override;
-  ~UVASyncTimerHandle();
-
-protected:
-  UVService *_service;
+  UVASyncTimerHandle(UVService *service)
+      : BasicHandleThreadSafe<UVTimerHandleBase>(service) {}
 };
 
 class UVAsyncService : public UVService {
