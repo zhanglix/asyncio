@@ -17,11 +17,11 @@ public:
   virtual void subHandle();
   size_t activeHandlesCount() { return _activeHandles; }
 
-  void startTimer(UVTimerHandleImp *);
-  void stopTimer(UVTimerHandleImp *);
+  void startTimer(UVTimerHandleBase *);
+  void stopTimer(UVTimerHandleBase *);
 
-  virtual void doStartTimer(UVTimerHandleImp *) {}
-  virtual void doStopTimer(UVTimerHandleImp *) {}
+  virtual void doStartTimer(UVTimerHandleBase *) {}
+  virtual void doStopTimer(UVTimerHandleBase *) {}
 
   uv_loop_t *getUVLoop() { return _uvLoop; }
   virtual void close();

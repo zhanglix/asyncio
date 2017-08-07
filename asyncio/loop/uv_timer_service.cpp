@@ -9,7 +9,7 @@ UVTimerHandle::UVTimerHandle(UVTimerService *service) : _service(service) {
 
 void UVTimerHandle::reset(uint64_t later, TimerCallback callback, void *data) {
   _later = later;
-  UVTimerHandleImp::reset(callback, data);
+  UVTimerHandleBase::reset(callback, data);
 }
 
 void UVTimerHandle::doStartTimer() {

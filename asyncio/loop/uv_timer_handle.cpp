@@ -3,19 +3,19 @@
 
 USING_ASYNNCIO_NAMESPACE;
 
-UVTimerHandleImp::UVTimerHandleImp(TimerCallback callback, void *data) {
+UVTimerHandleBase::UVTimerHandleBase(TimerCallback callback, void *data) {
   reset(callback, data);
 }
-void UVTimerHandleImp::reset(TimerCallback callback, void *data) {
+void UVTimerHandleBase::reset(TimerCallback callback, void *data) {
   _callback = callback;
   TimerHandle::reset(data);
 }
 
-void UVTimerHandleImp::processTimer() { process(); }
+void UVTimerHandleBase::processTimer() { process(); }
 
-void UVTimerHandleImp::setupTimer() { startTimer(); }
+void UVTimerHandleBase::setupTimer() { startTimer(); }
 
-bool UVTimerHandleImp::executeTimer() {
+bool UVTimerHandleBase::executeTimer() {
   (*_callback)(this);
   return true;
 };

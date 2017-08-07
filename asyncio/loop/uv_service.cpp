@@ -12,11 +12,11 @@ void UVService::close() {
 void UVService::addHandle() { ++_activeHandles; }
 void UVService::subHandle() { --_activeHandles; }
 
-void UVService::startTimer(UVTimerHandleImp *handle) {
+void UVService::startTimer(UVTimerHandleBase *handle) {
   addHandle();
   doStartTimer(handle);
 }
-void UVService::stopTimer(UVTimerHandleImp *handle) {
+void UVService::stopTimer(UVTimerHandleBase *handle) {
   doStopTimer(handle);
   // trick to prevent uvloop from hanging
   _uvLoop->stop_flag = 1;

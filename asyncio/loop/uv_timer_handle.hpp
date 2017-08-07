@@ -7,9 +7,9 @@
 
 BEGIN_ASYNCIO_NAMESPACE;
 
-class UVTimerHandleImp : public TimerHandle {
+class UVTimerHandleBase : public TimerHandle {
 public:
-  UVTimerHandleImp(TimerCallback callback = nullptr, void *data = nullptr);
+  UVTimerHandleBase(TimerCallback callback = nullptr, void *data = nullptr);
   void reset(TimerCallback callback, void *data);
 
   void processTimer(); // promote protected process() to public

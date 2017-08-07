@@ -11,7 +11,7 @@
 
 BEGIN_ASYNCIO_NAMESPACE;
 
-class UVASyncTimerHandle : public BasicHandleThreadSafe<UVTimerHandleImp> {
+class UVASyncTimerHandle : public BasicHandleThreadSafe<UVTimerHandleBase> {
 public:
   UVASyncTimerHandle(UVService *);
   void doStartTimer() override;
@@ -28,8 +28,8 @@ public:
 
   TimerHandle *callSoon(TimerCallback callback, void *data);
 
-  void doStartTimer(UVTimerHandleImp *handle) override;
-  void doStopTimer(UVTimerHandleImp *handle) override;
+  void doStartTimer(UVTimerHandleBase *handle) override;
+  void doStopTimer(UVTimerHandleBase *handle) override;
 
   void close() override;
 
@@ -41,13 +41,13 @@ protected:
   void uvAsyncSend();
   void processTimers();
 
-  void pushTimer(UVTimerHandleImp *handle);
-  UVTimerHandleImp *popTimer();
-  bool eraseTimer(UVTimerHandleImp *handle);
+  void pushTimer(UVTimerHandleBase *handle);
+  UVTimerHandleBase *popTimer();
+  bool eraseTimer(UVTimerHandleBase *handle);
 
 protected:
   uv_async_t *_uvAsync;
   std::mutex _mutex;
-  ExtendedQueue<UVTimerHandleImp *> _queue;
+  ExtendedQueue<UVTimerHandleBase *> _queue;
 };
 END_ASYNCIO_NAMESPACE;

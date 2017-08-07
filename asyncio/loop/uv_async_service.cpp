@@ -23,13 +23,13 @@ TimerHandle *UVAsyncService::callSoon(TimerCallback callback, void *data) {
   return (TimerHandle *)handle;
 }
 
-void UVAsyncService::doStartTimer(UVTimerHandleImp *handle) {
+void UVAsyncService::doStartTimer(UVTimerHandleBase *handle) {
   handle->addRef();
   pushTimer(handle);
   uvAsyncSend();
 }
 
-void UVAsyncService::doStopTimer(UVTimerHandleImp *handle) {
+void UVAsyncService::doStopTimer(UVTimerHandleBase *handle) {
   if (eraseTimer(handle)) {
     handle->subRef();
   }
@@ -61,7 +61,7 @@ void UVAsyncService::setupService() {
 
 void UVAsyncService::processTimers() {
   while (true) {
-    UVTimerHandleImp *handle = popTimer();
+    UVTimerHandleBase *handle = popTimer();
     if (handle) {
       handle->processTimer();
       handle->subRef();
@@ -78,15 +78,15 @@ void UVAsyncService::uvAsyncSend() {
   }
 }
 
-void UVAsyncService::pushTimer(UVTimerHandleImp *handle) {
+void UVAsyncService::pushTimer(UVTimerHandleBase *handle) {
   lock_guard<mutex> lock(_mutex);
   _queue.push(handle);
 }
 
-UVTimerHandleImp *UVAsyncService::popTimer() {
+UVTimerHandleBase *UVAsyncService::popTimer() {
   lock_guard<mutex> lock(_mutex);
   if (!_queue.empty()) {
-    UVTimerHandleImp *handle = _queue.front();
+    UVTimerHandleBase *handle = _queue.front();
     _queue.pop();
     return handle;
   } else {
@@ -94,7 +94,7 @@ UVTimerHandleImp *UVAsyncService::popTimer() {
   }
 }
 
-bool UVAsyncService::eraseTimer(UVTimerHandleImp *handle) {
+bool UVAsyncService::eraseTimer(UVTimerHandleBase *handle) {
   lock_guard<mutex> lock(_mutex);
   return _queue.erase(handle);
 }

@@ -11,7 +11,7 @@
 BEGIN_ASYNCIO_NAMESPACE;
 class UVTimerService;
 
-class UVTimerHandle : public UVTimerHandleImp {
+class UVTimerHandle : public UVTimerHandleBase {
 public:
   UVTimerHandle(UVTimerService *service);
   ~UVTimerHandle();
