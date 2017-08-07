@@ -22,6 +22,7 @@ public:
 
   virtual void doStartTimer(UVHandle *) {}
   virtual void doStopTimer(UVHandle *) {}
+  virtual bool doCancelTimer(UVHandle *) { return true; }
   virtual void recycleHandle(UVHandle *);
 
   uv_loop_t *getUVLoop() { return _uvLoop; }

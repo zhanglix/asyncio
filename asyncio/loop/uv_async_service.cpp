@@ -22,10 +22,11 @@ void UVAsyncService::doStartTimer(UVHandle *handle) {
   uvAsyncSend();
 }
 
-void UVAsyncService::doStopTimer(UVHandle *handle) {
+bool UVAsyncService::doCancelTimer(UVHandle *handle) {
   if (eraseTimer(handle)) {
     handle->subRef();
   }
+  return true;
 }
 
 void UVAsyncService::addHandle() {

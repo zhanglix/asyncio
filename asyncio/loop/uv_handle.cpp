@@ -4,8 +4,7 @@
 
 USING_ASYNNCIO_NAMESPACE;
 
-UVHandle::UVHandle(UVService *service, TimerCallback callback,
-                                     void *data)
+UVHandle::UVHandle(UVService *service, TimerCallback callback, void *data)
     : _service(service) {
   reset(callback, data);
 }
@@ -23,7 +22,9 @@ void UVHandle::doStartTimer() { _service->startTimer(this); }
 bool UVHandle::executeTimer() {
   (*_callback)(this);
   return true;
-};
+}
+
+bool UVHandle::cancelTimer() { return _service->doCancelTimer(this); }
 
 void UVHandle::doStopTimer() { _service->stopTimer(this); }
 

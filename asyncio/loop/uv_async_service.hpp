@@ -24,7 +24,7 @@ public:
   TimerHandle *callSoon(TimerCallback callback, void *data);
 
   void doStartTimer(UVHandle *handle) override;
-  void doStopTimer(UVHandle *handle) override;
+  bool doCancelTimer(UVHandle *handle) override;
 
   void close() override;
 

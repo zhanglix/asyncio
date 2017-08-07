@@ -11,7 +11,7 @@ class UVService;
 class UVHandle : public TimerHandle {
 public:
   UVHandle(UVService *service, TimerCallback callback = nullptr,
-                    void *data = nullptr);
+           void *data = nullptr);
   void reset(TimerCallback callback, void *data);
 
   void processTimer(); // promote protected process() to public
@@ -20,6 +20,7 @@ public:
 protected:
   void doStartTimer() override;
   bool executeTimer() override;
+  bool cancelTimer() override;
   void doStopTimer() override;
   void recycle() override;
   uv_loop_t *getUVLoop();
