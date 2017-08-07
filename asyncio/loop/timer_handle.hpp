@@ -5,7 +5,7 @@
 
 #include <asyncio/common.hpp>
 
-#include "abstract_handle.hpp"
+#include "handle_base.hpp"
 #include "loop_core.hpp"
 
 BEGIN_ASYNCIO_NAMESPACE;
