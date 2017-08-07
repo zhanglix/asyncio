@@ -28,3 +28,5 @@ bool UVTimerHandleBase::executeTimer() {
 void UVTimerHandleBase::doStopTimer() { _service->stopTimer(this); }
 
 void UVTimerHandleBase::recycle() { _service->recycleHandle(this); }
+
+uv_loop_t *UVTimerHandleBase::getUVLoop() { return _service->getUVLoop(); }

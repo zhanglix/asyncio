@@ -4,6 +4,7 @@
 
 #include "loop_core.hpp"
 #include "timer_handle.hpp"
+#include "uv.h"
 
 BEGIN_ASYNCIO_NAMESPACE;
 class UVService;
@@ -21,7 +22,7 @@ protected:
   bool executeTimer() override;
   void doStopTimer() override;
   void recycle() override;
-
+  uv_loop_t *getUVLoop();
 
 protected:
   UVService *_service;

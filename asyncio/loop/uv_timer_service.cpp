@@ -25,7 +25,7 @@ void UVTimerHandle::doStopTimer() {
 }
 
 void UVTimerHandle::uvTimerInit() {
-  int err = uv_timer_init(_service->getUVLoop(), &_uv_timer);
+  int err = uv_timer_init(getUVLoop(), &_uv_timer);
   if (err != 0) {
     throw LoopException("uv_timer_init() failed.");
   }
