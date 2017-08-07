@@ -8,7 +8,6 @@
 
 #include "../loop_exception.hpp"
 #include "../uv_loop_core.hpp"
-#include "../uv_timer_handle.hpp"
 
 #define ENABLE_ASYNCIO_LOG
 #include <asyncio/log.hpp>

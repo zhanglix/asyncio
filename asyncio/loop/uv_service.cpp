@@ -25,6 +25,8 @@ void UVTimerHandleImp::reset(TimerCallback callback, void *data) {
   TimerHandle::reset(data);
 }
 
+void UVTimerHandleImp::processTimer() { process(); }
+
 void UVTimerHandleImp::setupTimer() { startTimer(); }
 
 bool UVTimerHandleImp::executeTimer() {

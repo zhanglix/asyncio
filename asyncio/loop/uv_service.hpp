@@ -33,7 +33,8 @@ public:
   UVTimerHandleImp(TimerCallback callback = nullptr, void *data = nullptr);
   void reset(TimerCallback callback, void *data);
 
-  void setupTimer(); // promote protected startTimer() to public
+  void processTimer(); // promote protected process() to public
+  void setupTimer();   // promote protected startTimer() to public
 
 protected:
   virtual bool executeTimer() override;

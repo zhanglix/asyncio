@@ -4,20 +4,47 @@
 
 using namespace std;
 USING_ASYNNCIO_NAMESPACE;
+// UVASyncTimerHandle ...
+UVASyncTimerHandle::UVASyncTimerHandle(UVService *service)
+    : _service(service) {}
+UVASyncTimerHandle::~UVASyncTimerHandle() { _service->subHandle(); }
 
-UVAsyncService::UVAsyncService(uv_loop_t *uvLoop)
-    : _uvLoop(uvLoop), _activeHandles(0) {
+void UVASyncTimerHandle::doStartTimer() { _service->startTimer(this); }
+void UVASyncTimerHandle::doStopTimer() { _service->stopTimer(this); }
+// UVAsyncService Following ...
+UVAsyncService::UVAsyncService(uv_loop_t *uvLoop) : UVService(uvLoop) {
   setupService();
 }
 
-size_t UVAsyncService::addHandle() {
-  lock_guard<mutex> lock(_mutex);
-  return ++_activeHandles;
+TimerHandle *UVAsyncService::callSoon(TimerCallback callback, void *data) {
+  auto handle = new UVASyncTimerHandle(this);
+  handle->reset(callback, data);
+  handle->setupTimer();
+  return (TimerHandle *)handle;
 }
 
-size_t UVAsyncService::subHandle() {
+void UVAsyncService::startTimer(UVTimerHandleImp *handle) {
+  UVService::startTimer(handle);
+  handle->addRef();
+  pushTimer(handle);
+  uvAsyncSend();
+}
+
+void UVAsyncService::stopTimer(UVTimerHandleImp *handle) {
+  if (eraseTimer(handle)) {
+    handle->subRef();
+  }
+  UVService::stopTimer(handle);
+}
+
+void UVAsyncService::addHandle() {
   lock_guard<mutex> lock(_mutex);
-  return --_activeHandles;
+  UVService::addHandle();
+}
+
+void UVAsyncService::subHandle() {
+  lock_guard<mutex> lock(_mutex);
+  UVService::subHandle();
 }
 
 void UVAsyncService::setupService() {
@@ -34,48 +61,11 @@ void UVAsyncService::setupService() {
   _uvAsync->data = this;
 }
 
-void UVAsyncService::uvAsyncSend() {
-  int err = uv_async_send(_uvAsync);
-  if (err != 0) {
-    throw LoopException("uv_async_send() failed.");
-  }
-}
-
-UVASyncTimerHandle *UVAsyncService::callSoon(TimerCallback callback,
-                                             void *data) {
-  auto handle = new UVASyncTimerHandle(this, callback, data);
-  handle->addRef();
-  pushTimer(handle);
-  uvAsyncSend();
-  return handle;
-}
-
-void UVAsyncService::pushTimer(UVASyncTimerHandle *handle) {
-  lock_guard<mutex> lock(_mutex);
-  _queue.push(handle);
-}
-
-UVASyncTimerHandle *UVAsyncService::popTimer() {
-  lock_guard<mutex> lock(_mutex);
-  if (!_queue.empty()) {
-    UVASyncTimerHandle *handle = _queue.front();
-    _queue.pop();
-    return handle;
-  } else {
-    return nullptr;
-  }
-}
-
-bool UVAsyncService::eraseTimer(UVASyncTimerHandle *handle) {
-  lock_guard<mutex> lock(_mutex);
-  return _queue.erase(handle);
-}
-
 void UVAsyncService::processTimers() {
   while (true) {
-    UVASyncTimerHandle *handle = popTimer();
+    UVTimerHandleImp *handle = popTimer();
     if (handle) {
-      handle->runCallBack();
+      handle->processTimer();
       handle->subRef();
     } else {
       return;
@@ -83,16 +73,36 @@ void UVAsyncService::processTimers() {
   };
 }
 
-void UVAsyncService::timerCanceled(UVASyncTimerHandle *handle) {
-  if (eraseTimer(handle)) {
-    handle->subRef();
+void UVAsyncService::uvAsyncSend() {
+  int err = uv_async_send(_uvAsync);
+  if (err != 0) {
+    throw LoopException("uv_async_send() failed.");
   }
 }
 
-void UVAsyncService::close() {
-  if (_activeHandles > 0) {
-    throw LoopBusyError("UVAsyncService busy.");
+void UVAsyncService::pushTimer(UVTimerHandleImp *handle) {
+  lock_guard<mutex> lock(_mutex);
+  _queue.push(handle);
+}
+
+UVTimerHandleImp *UVAsyncService::popTimer() {
+  lock_guard<mutex> lock(_mutex);
+  if (!_queue.empty()) {
+    UVTimerHandleImp *handle = _queue.front();
+    _queue.pop();
+    return handle;
+  } else {
+    return nullptr;
   }
+}
+
+bool UVAsyncService::eraseTimer(UVTimerHandleImp *handle) {
+  lock_guard<mutex> lock(_mutex);
+  return _queue.erase(handle);
+}
+
+void UVAsyncService::close() {
+  UVService::close();
 
   uv_close((uv_handle_t *)(_uvAsync), [](uv_handle_t *h) {
     auto handle = (uv_async_t *)h;

@@ -7,36 +7,47 @@
 
 #include "extended_queue.hpp"
 #include "loop_core.hpp"
+#include "uv_service.hpp"
 
 BEGIN_ASYNCIO_NAMESPACE;
-class UVASyncTimerHandle;
-class UVAsyncService {
+
+class UVASyncTimerHandle : public BasicHandleThreadSafe<UVTimerHandleImp> {
+public:
+  UVASyncTimerHandle(UVService *);
+  void doStartTimer() override;
+  void doStopTimer() override;
+  ~UVASyncTimerHandle();
+
+protected:
+  UVService *_service;
+};
+
+class UVAsyncService : public UVService {
 public:
   UVAsyncService(uv_loop_t *uvLoop);
 
-  size_t addHandle();
-  size_t subHandle();
-  size_t activeHandlesCount() { return _activeHandles; }
+  TimerHandle *callSoon(TimerCallback callback, void *data);
 
-  void setupService();
-  void uvAsyncSend();
+  void startTimer(UVTimerHandleImp *handle) override;
+  void stopTimer(UVTimerHandleImp *handle) override;
 
-  UVASyncTimerHandle *callSoon(TimerCallback callback, void *data);
+  void close() override;
 
-  void pushTimer(UVASyncTimerHandle *handle);
-  UVASyncTimerHandle *popTimer();
-  bool eraseTimer(UVASyncTimerHandle *handle);
-
-  void processTimers();
-  void timerCanceled(UVASyncTimerHandle *handle);
-
-  void close();
+  void addHandle() override;
+  void subHandle() override;
 
 protected:
-  uv_loop_t *_uvLoop;
+  void setupService();
+  void uvAsyncSend();
+  void processTimers();
+
+  void pushTimer(UVTimerHandleImp *handle);
+  UVTimerHandleImp *popTimer();
+  bool eraseTimer(UVTimerHandleImp *handle);
+
+protected:
   uv_async_t *_uvAsync;
-  size_t _activeHandles;
   std::mutex _mutex;
-  ExtendedQueue<UVASyncTimerHandle *> _queue;
+  ExtendedQueue<UVTimerHandleImp *> _queue;
 };
 END_ASYNCIO_NAMESPACE;

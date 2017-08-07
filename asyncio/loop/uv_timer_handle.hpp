@@ -23,24 +23,24 @@ protected:
   bool _done;
 };
 
-class UVASyncTimerHandle : public UVTimerHandleBase {
-public:
-  UVASyncTimerHandle(UVAsyncService *service, TimerCallback callback,
-                     void *data);
-  ~UVASyncTimerHandle();
+// class UVASyncTimerHandle : public UVTimerHandleBase {
+// public:
+//   UVASyncTimerHandle(UVAsyncService *service, TimerCallback callback,
+//                      void *data);
+//   ~UVASyncTimerHandle();
 
-  // size_t addRef() override;
-  // size_t subRef() override;
+//   // size_t addRef() override;
+//   // size_t subRef() override;
 
-  void runCallBack() override;
+//   void runCallBack() override;
 
-  bool cancel() override;
-  void completeTimer() override;
-  bool completeUnlessDone();
+//   bool cancel() override;
+//   void completeTimer() override;
+//   bool completeUnlessDone();
 
-protected:
-  UVAsyncService *_service;
-  std::mutex _mutex;
-};
+// protected:
+//   UVAsyncService *_service;
+//   std::mutex _mutex;
+// };
 
 END_ASYNCIO_NAMESPACE;
