@@ -11,7 +11,7 @@ public:
   HandleBase();
   virtual ~HandleBase();
 
-  virtual bool done() const;
+  bool done() const;
   virtual bool cancel() = 0;
 
   size_t refCount() const;
@@ -20,6 +20,7 @@ public:
 
 protected:
   virtual void recycle();
+
   enum State { READY, RUNNING, CANCELING, DONE };
   void reset();
   virtual size_t doAddRef();
@@ -34,17 +35,17 @@ protected:
 
 class BasicHandle : public HandleBase {
 public: // DON'T add any public method here
-  virtual bool cancel() override;
+  virtual bool cancel() final;
 
 protected: // implementing details ...
-  virtual bool process();
+  bool process();
   void startTimer();
   void endTimer();
 
   virtual void doStartTimer(); // eg: notify service
-  virtual void doStopTimer();  // eg: notify service
   virtual bool executeTimer(); // return false for asynchrouns execution!
   virtual bool cancelTimer();  // return false for asynchrouns cancellation
+  virtual void doStopTimer();  // eg: notify service
   virtual void afterDone();    // do callback here
 };
 
@@ -53,17 +54,17 @@ public:
   template <class... Args>
   BasicHandleThreadSafe(Args &&... args) : HB(std::forward<Args>(args)...) {}
 
-  virtual size_t doAddRef() override {
+  virtual size_t doAddRef() final {
     std::lock_guard<std::mutex> lock(_mutex);
     return HB::doAddRef();
   }
-  virtual size_t doSubRef() override {
+  virtual size_t doSubRef() final {
     std::lock_guard<std::mutex> lock(_mutex);
     return HB::doSubRef();
   }
 
   using State = typename HB::State;
-  virtual bool tryTransferState(State from, State to) override {
+  virtual bool tryTransferState(State from, State to) final {
     std::lock_guard<std::mutex> lock(_mutex);
     return HB::tryTransferState(from, to);
   }

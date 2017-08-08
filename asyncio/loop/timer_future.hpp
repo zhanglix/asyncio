@@ -16,79 +16,58 @@ BEGIN_ASYNCIO_NAMESPACE;
 
 template <class R> class TimerFutureBase : public Future<R> {
 public:
-  TimerFutureBase() : _handle(nullptr), _refCount(1) {
+  TimerFutureBase(LoopCore *lc, uint64_t later)
+      : _handle(nullptr), _lc(lc), _later(later) {
     _future = std::move(_promise.get_future());
   }
 
-  virtual ~TimerFutureBase() {
-    if (_handle) {
-      _handle->subRef();
-    }
+  void reset(uint64_t later) {
+    Future<R>::reset();
+    _handle = nullptr;
+    _later = later;
+    _promise = std::promise<R>();
+    _future = std::move(_promise.get_future());
   }
 
-  virtual R get() override { return _future.get(); }
+  virtual R get() final { return _future.get(); }
 
-  bool done() const override { return _handle->done(); }
-
-  void release() override {
+  void release() final {
     LOG_DEBUG("fut({})->_refCount:({}). handle({})->refCount:({})",
-              (void *)this, _refCount, (void *)_handle, _handle->refCount());
-    subRef();
-  }
-
-  bool cancel() override {
-    if (tryCancelTimer()) {
-      endTimer();
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  static void processEntry(TimerHandle *handle) {
-    auto timerFuture = (TimerFutureBase<R> *)(handle->data());
-    timerFuture->process();
-  }
-
-  virtual void process() {
-    startTimer();
-    endTimer();
-  }
-
-  virtual void startTimer() = 0;
-
-  virtual bool tryCancelTimer() {
-    if (_handle->cancel()) {
-      _promise.set_exception(
-          std::make_exception_ptr(FutureCanceledError("canceled")));
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  virtual void endTimer() {
-    tryCallDoneCallback();
+              (void *)this, this->refCount(), (void *)_handle,
+              _handle->refCount());
     this->subRef();
   }
 
-  using DoneCallback = typename Future<R>::DoneCallback;
-  void setDoneCallback(DoneCallback callback) override {
-    if (callNowOrSet(callback)) {
-      callback(this);
-    }
+  void setupTimer() { this->startTimer(); } // promote protected
+
+  void doStartTimer() final {
+    this->addRef(); // add a ref for LoopCore object
+    _handle = startTimerViaLoopCore();
   }
 
-  virtual bool callNowOrSet(DoneCallback &callback) {
-    if (done()) {
-      return true;
-    } else {
-      _doneCallback = callback;
-      return false;
-    }
+  static void staticEntry(TimerHandle *handle) {
+    auto timerFuture = (TimerFutureBase<R> *)(handle->data());
+    timerFuture->process();
+    timerFuture->subRef(); // release ref if called by loop_core;
   }
 
-  void tryCallDoneCallback() {
+  auto getEntry() { return staticEntry; }
+
+  virtual TimerHandle *startTimerViaLoopCore() {
+    return _later > 0 ? _lc->callLater(_later, getEntry(), this)
+                      : _lc->callSoon(getEntry(), this);
+  }
+
+  virtual bool cancelTimer() final {
+    if (_handle->cancel()) {
+      this->subRef(); // release ref if canceled call from loop_core
+    }
+    _promise.set_exception(
+        std::make_exception_ptr(FutureCanceledError("canceled")));
+    return true;
+  }
+
+  void afterDone() final {
     if (hasDoneCallback()) {
       _doneCallback(this);
     }
@@ -96,58 +75,66 @@ public:
 
   virtual bool hasDoneCallback() { return (bool)_doneCallback; }
 
-  size_t refCount() const { return _refCount; }
-
-  size_t addRef() { return doAddRef(); }
-  size_t subRef() {
-    if (doSubRef() == 0) {
-      delete this;
-      return 0;
-    } else {
-      return refCount();
+  using DoneCallback = typename Future<R>::DoneCallback;
+  void setDoneCallback(DoneCallback callback) final {
+    if (callNowOrSet(callback)) {
+      callback(this);
     }
   }
 
-  virtual size_t doAddRef() { return ++_refCount; }
-  virtual size_t doSubRef() { return --_refCount; }
+  virtual bool callNowOrSet(DoneCallback &callback) {
+    if (this->done()) {
+      return true;
+    } else {
+      _doneCallback = callback;
+      return false;
+    }
+  }
 
-  void setHandle(TimerHandle *handle) { _handle = handle; }
+  void recycle() final {
+    if (_handle) {
+      _handle->subRef();
+      _handle = nullptr;
+    }
+    cleanUp();
+    doRecycle();
+  }
+
+  virtual void cleanUp() {}
+  virtual void doRecycle() { delete this; }
 
 protected:
   std::promise<R> _promise;
   std::future<R> _future;
-  TimerHandle *_handle;
-  size_t _refCount;
   DoneCallback _doneCallback;
+
+  LoopCore *_lc;
+  TimerHandle *_handle;
+  size_t _later;
 };
 
-template <class R> class TimerFutureBaseThreadSafe : public TimerFutureBase<R> {
+template <class R>
+class TimerFutureBaseThreadSafe
+    : public BasicHandleThreadSafe<TimerFutureBase<R>> {
 public:
-  TimerFutureBaseThreadSafe() : TimerFutureBase<R>() {}
-  virtual ~TimerFutureBaseThreadSafe() {}
-
-  virtual size_t doAddRef() override {
-    std::lock_guard<std::mutex> lock(_mutex);
-    return TimerFutureBase<R>::doAddRef();
-  }
-  virtual size_t doSubRef() override {
-    std::lock_guard<std::mutex> lock(_mutex);
-    return TimerFutureBase<R>::doSubRef();
-  }
+  typedef BasicHandleThreadSafe<TimerFutureBase<R>> BaseClass;
+  TimerFutureBaseThreadSafe(LoopCore *lc, uint64_t later)
+      : BaseClass(lc, later) {}
 
   using DoneCallback = typename Future<R>::DoneCallback;
-  virtual bool callNowOrSet(DoneCallback &callback) override {
-    std::lock_guard<std::mutex> lock(_mutex);
-    return TimerFutureBase<R>::callNowOrSet(callback);
+  virtual bool callNowOrSet(DoneCallback &callback) final {
+    std::lock_guard<std::mutex> lock(this->_mutex);
+    return BaseClass::callNowOrSet(callback);
   }
 
-  virtual bool hasDoneCallback() override {
-    std::lock_guard<std::mutex> lock(_mutex);
-    return TimerFutureBase<R>::hasDoneCallback();
+  virtual bool hasDoneCallback() final {
+    std::lock_guard<std::mutex> lock(this->_mutex);
+    return BaseClass::hasDoneCallback();
   }
 
-protected:
-  std::mutex _mutex;
+  TimerHandle *startTimerViaLoopCore() final {
+    return this->_lc->callSoonThreadSafe(this->getEntry(), this);
+  }
 };
 
 template <class R, bool threadSafe>
@@ -156,8 +143,25 @@ class TimerFuture
                                 TimerFutureBase<R>> {
 public:
   typedef std::function<R(void)> F;
-  TimerFuture(F &f) : _f(f) {}
-  virtual ~TimerFuture() {}
+  typedef std::conditional_t<threadSafe, TimerFutureBaseThreadSafe<R>,
+                             TimerFutureBase<R>>
+      BaseClass;
+  TimerFuture(LoopCore *lc, uint64_t later, F &f)
+      : BaseClass(lc, later), _f(f) {}
+
+  void reset(uint64_t later, F &f) {
+    BaseClass::reset(later);
+    _f = f;
+  }
+
+  bool executeTimer() final {
+    try {
+      this->template setPromise<R>();
+    } catch (...) {
+      this->_promise.set_exception(std::current_exception());
+    }
+    return true;
+  }
 
   template <class T>
   typename std::enable_if_t<std::is_void<T>::value> setPromise() {
@@ -168,14 +172,6 @@ public:
   template <class T>
   typename std::enable_if_t<!std::is_void<T>::value> setPromise() {
     this->_promise.set_value(_f());
-  }
-
-  virtual void startTimer() override {
-    try {
-      this->template setPromise<R>();
-    } catch (...) {
-      this->_promise.set_exception(std::current_exception());
-    }
   }
 
 protected:

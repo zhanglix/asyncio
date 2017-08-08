@@ -62,8 +62,8 @@ protected:
     std::function<R(void)> call =
         std::bind(std::forward<F>(f), std::forward<Args>(args)...);
 
-    auto timerFuture = new FutureType(call);
-    setupFuture<threadSafe, FutureType>(timerFuture, milliseconds);
+    auto timerFuture = new FutureType(_lc, milliseconds, call);
+    timerFuture->setupTimer();
     return (Future<R> *)timerFuture;
   }
 
@@ -73,25 +73,10 @@ protected:
     using R = typename C::ReturnType;
     using FutureType = Task<C, R, threadSafe>;
 
-    auto timerFuture = new FutureType(std::forward<CoroType>(co));
-    setupFuture<threadSafe, FutureType>(timerFuture, milliseconds);
+    auto timerFuture =
+        new FutureType(_lc, milliseconds, std::forward<CoroType>(co));
+    timerFuture->setupTimer();
     return (Future<R> *)timerFuture;
-  }
-
-protected:
-  template <bool threadSafe, class Fut>
-  std::enable_if_t<threadSafe> setupFuture(Fut *fut, uint64_t) {
-    fut->addRef();
-    auto handle = _lc->callSoonThreadSafe(fut->processEntry, fut);
-    fut->setHandle(handle);
-  }
-
-  template <bool threadSafe, class Fut>
-  std::enable_if_t<!threadSafe> setupFuture(Fut *fut, uint64_t ms) {
-    fut->addRef();
-    auto handle = ms > 0 ? _lc->callLater(ms, fut->processEntry, fut)
-                         : _lc->callSoon(fut->processEntry, fut);
-    fut->setHandle(handle);
   }
 
 private:

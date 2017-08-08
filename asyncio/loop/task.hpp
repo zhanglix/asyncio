@@ -14,20 +14,27 @@ template <class C, class R, bool threadSafe, class A = DefaultAllocator>
 class Task : public std::conditional_t<threadSafe, TimerFutureBaseThreadSafe<R>,
                                        TimerFutureBase<R>> {
 public:
-  Task(C &co) : _co(std::move(co)), _done(false) {}
-  Task(C &&co) : Task(co) {}
+  typedef std::conditional_t<threadSafe, TimerFutureBaseThreadSafe<R>,
+                             TimerFutureBase<R>>
+      BaseClass;
+  Task(LoopCore *lc, uint64_t later, C &co)
+      : BaseClass(lc, later), _co(std::move(co)) {}
+  Task(LoopCore *lc, uint64_t later, C &&co) : Task(lc, later, co) {}
 
-  virtual ~Task() {}
+  void reset(uint64_t later, C &co) {
+    BaseClass::reset(later);
+    _co = std::move(co);
+  }
 
-  bool done() const override { return this->_done; }
-  void process() override { startTimer(); }
-  void startTimer() override {
+  bool executeTimer() final {
     _coHolder = runCoro();
     _coHolder.run();
+    return false;
   }
-  void endTimer() override {
-    this->_done = true;
-    TimerFutureBase<R>::endTimer();
+
+  void cleanUp() final {
+    _coHolder = EndCoro<A>();
+    _co = C();
   }
 
   EndCoro<A> runCoro() {
@@ -53,7 +60,6 @@ public:
 protected:
   C _co;
   EndCoro<A> _coHolder;
-  bool _done;
 };
 
 END_ASYNCIO_NAMESPACE;

@@ -22,37 +22,29 @@ public:
                                  void *data) override;
 
   class TrivialTimerHandle;
+  void push(TrivialTimerHandle *h);
   virtual bool cancelTimer(TrivialTimerHandle *handle);
   virtual void recycleTimerHandle(TrivialTimerHandle *handle) { delete handle; }
 
   class TrivialTimerHandle : public TimerHandle {
   public:
-    enum State { READY = 0, FINISHED, CANCELED };
+    TrivialTimerHandle(TrivialLoop *lc, TimerCallback cb, void *data)
+        : TimerHandle(data), _cb(cb), _lc(lc) {}
 
-    TrivialTimerHandle(TrivialLoop *lc, void *data)
-        : TimerHandle(data), _loop(lc), _state(READY) {}
-    TrivialTimerHandle(TrivialLoop *lc) : TrivialTimerHandle(lc, nullptr) {}
+    virtual void recycle() override { _lc->recycleTimerHandle(this); }
 
-    virtual void recycle() override { _loop->recycleTimerHandle(this); }
-
-    bool cancel() override { return _loop->cancelTimer(this); }
-    bool done() const override { return _state != State::READY; }
-
-    State getState() const { return _state; }
-    void setState(TrivialTimerHandle::State state) { _state = state; }
-
-    void reset(void *data = nullptr) {
-      TimerHandle::reset(data);
-      _state = State::READY;
+    void setupTimer() { startTimer(); }
+    void processEntry() { process(); }
+    void doStartTimer() override { _lc->push(this); }
+    bool cancelTimer() override { return _lc->cancelTimer(this); }
+    bool executeTimer() override {
+      (*_cb)(this);
+      return true;
     }
 
-    TimerCallback callback;
-
-    static void subRefOnLoop(TimerHandle *handle);
-
   protected:
-    State _state;
-    TrivialLoop *_loop;
+    TimerCallback _cb;
+    TrivialLoop *_lc;
   };
 
 private:

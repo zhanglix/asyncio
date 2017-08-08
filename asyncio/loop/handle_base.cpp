@@ -48,7 +48,7 @@ void BasicHandle::startTimer() {
 bool BasicHandle::cancel() {
   if (tryTransferState(READY, CANCELING) && cancelTimer()) {
     endTimer();
-    return true; // to be removed
+    return true;
   }
   return false;
 }
@@ -56,7 +56,7 @@ bool BasicHandle::cancel() {
 bool BasicHandle::process() {
   if (tryTransferState(READY, RUNNING) && executeTimer()) {
     endTimer();
-    return true; // to be removed
+    return true;
   }
   return false;
 }
