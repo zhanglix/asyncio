@@ -83,8 +83,8 @@ TEST_CASE("eventloop release early", "[release]") {
 
 TEST_CASE("event loop done callback", "[callback]") {
   EventLoop loop;
-  Future<void> *done = nullptr;
-  auto onDone = [&](Future<void> *h) { done = h; };
+  FutureBase *done = nullptr;
+  auto onDone = [&](FutureBase *h) { done = h; };
   auto doNothing = [] {};
   auto coNothing = []() -> coro<void> { co_return; };
   Future<void> *fut = nullptr;

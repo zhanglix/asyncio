@@ -11,18 +11,14 @@
 BEGIN_ASYNCIO_NAMESPACE;
 
 template <class C, class R, bool threadSafe, class A = DefaultAllocator>
-class Task : public std::conditional_t<threadSafe, TimerFutureBaseThreadSafe<R>,
-                                       TimerFutureBase<R>> {
+class Task : public TimerFutureBaseType<R, threadSafe> {
 public:
-  typedef std::conditional_t<threadSafe, TimerFutureBaseThreadSafe<R>,
-                             TimerFutureBase<R>>
-      BaseClass;
-  Task(LoopCore *lc, uint64_t later, C &co)
-      : BaseClass(lc, later), _co(std::move(co)) {}
+   Task(LoopCore *lc, uint64_t later, C &co)
+      : TimerFutureBaseType<R, threadSafe>(lc, later), _co(std::move(co)) {}
   Task(LoopCore *lc, uint64_t later, C &&co) : Task(lc, later, co) {}
 
   void reset(uint64_t later, C &co) {
-    BaseClass::reset(later);
+    TimerFutureBaseType<R, threadSafe>::reset(later);
     _co = std::move(co);
   }
 

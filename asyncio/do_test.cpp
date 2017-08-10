@@ -6,7 +6,7 @@
 #define ENABLE_ASYNCIO_LOG
 #include "log.hpp"
 using namespace Catch;
-struct LogEvents : TestEventListenerBase {
+struct TestEventLogger : TestEventListenerBase {
 
   using TestEventListenerBase::TestEventListenerBase; // inherit constructor
   // The whole test run, starting and ending
@@ -15,18 +15,18 @@ struct LogEvents : TestEventListenerBase {
 
   // Test cases starting and ending
   void testCaseStarting(TestCaseInfo const &testInfo) {
-    LOG_INFO("Case start: {}", testInfo.name);
+    LOG_DEBUG("Case start: {}", testInfo.name);
   }
   void testCaseEnded(TestCaseStats const &testCaseStats) {
-    LOG_INFO("Case ended: {}", testCaseStats.testInfo.name);
+    LOG_DEBUG("Case ended: {}", testCaseStats.testInfo.name);
   }
 
   // Sections starting and ending
   void sectionStarting(SectionInfo const &sectionInfo) {
-    LOG_INFO("Section start: {}", sectionInfo.name);
+    LOG_DEBUG("Section start: {}", sectionInfo.name);
   }
   void sectionEnded(SectionStats const &sectionStats) {
-    LOG_INFO("Section ended: {}", sectionStats.sectionInfo.name);
+    LOG_DEBUG("Section ended: {}", sectionStats.sectionInfo.name);
   }
 
   // // Assertions before/ after
@@ -37,7 +37,7 @@ struct LogEvents : TestEventListenerBase {
   // void skipTest(TestCaseInfo const &testInfo) {}
 };
 
-CATCH_REGISTER_LISTENER(LogEvents)
+CATCH_REGISTER_LISTENER(TestEventLogger)
 
 int main(int argc, char *argv[]) {
   // global setup...

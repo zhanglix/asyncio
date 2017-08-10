@@ -136,6 +136,9 @@ public:
   bool operator!=(const yield_iterator &other) const {
     return _handle != other._handle;
   }
+  bool operator==(const yield_iterator &other) const {
+    return _handle != other._handle;
+  }
   auto operator*() const { return std::move(_value); }
   bool next() {
     LOG_DEBUG("next. this: {}, handle: {}", (void *)this, _handle.address());

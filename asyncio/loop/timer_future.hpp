@@ -31,12 +31,7 @@ public:
 
   virtual R get() final { return _future.get(); }
 
-  void release() final {
-    LOG_DEBUG("fut({})->_refCount:({}). handle({})->refCount:({})",
-              (void *)this, this->refCount(), (void *)_handle,
-              _handle->refCount());
-    this->subRef();
-  }
+  void release() final { this->subRef(); }
 
   void setupTimer() { this->startTimer(); } // promote protected
 
@@ -68,14 +63,15 @@ public:
   }
 
   void afterDone() final {
-    if (hasDoneCallback()) {
-      _doneCallback(this);
+    auto cb = getDoneCallback();
+    if (cb) {
+      cb(this);
     }
   }
+  using typename FutureBase::DoneCallback;
 
-  virtual bool hasDoneCallback() { return (bool)_doneCallback; }
+  virtual DoneCallback getDoneCallback() { return std::move(_doneCallback); }
 
-  using DoneCallback = typename Future<R>::DoneCallback;
   void setDoneCallback(DoneCallback callback) final {
     if (callNowOrSet(callback)) {
       callback(this);
@@ -86,7 +82,7 @@ public:
     if (this->done()) {
       return true;
     } else {
-      _doneCallback = callback;
+      _doneCallback = std::move(callback);
       return false;
     }
   }
@@ -113,23 +109,21 @@ protected:
   size_t _later;
 };
 
-template <class R>
-class TimerFutureBaseThreadSafe
-    : public BasicHandleThreadSafe<TimerFutureBase<R>> {
+template <class R,
+          typename BaseClass = BasicHandleThreadSafe<TimerFutureBase<R>>>
+class TimerFutureBaseThreadSafe : public BaseClass {
 public:
-  typedef BasicHandleThreadSafe<TimerFutureBase<R>> BaseClass;
-  TimerFutureBaseThreadSafe(LoopCore *lc, uint64_t later)
-      : BaseClass(lc, later) {}
+  using BaseClass::BaseClass;
 
-  using DoneCallback = typename Future<R>::DoneCallback;
+  using typename FutureBase::DoneCallback;
   virtual bool callNowOrSet(DoneCallback &callback) final {
     std::lock_guard<std::mutex> lock(this->_mutex);
     return BaseClass::callNowOrSet(callback);
   }
 
-  virtual bool hasDoneCallback() final {
+  virtual DoneCallback getDoneCallback() final {
     std::lock_guard<std::mutex> lock(this->_mutex);
-    return BaseClass::hasDoneCallback();
+    return BaseClass::getDoneCallback();
   }
 
   TimerHandle *startTimerViaLoopCore() final {
@@ -137,20 +131,21 @@ public:
   }
 };
 
+template <typename R, bool threadSafe>
+using TimerFutureBaseType =
+    std::conditional_t<threadSafe, TimerFutureBaseThreadSafe<R>,
+                       TimerFutureBase<R>>;
+
 template <class R, bool threadSafe>
-class TimerFuture
-    : public std::conditional_t<threadSafe, TimerFutureBaseThreadSafe<R>,
-                                TimerFutureBase<R>> {
+class TimerFuture : public TimerFutureBaseType<R, threadSafe> {
 public:
   typedef std::function<R(void)> F;
-  typedef std::conditional_t<threadSafe, TimerFutureBaseThreadSafe<R>,
-                             TimerFutureBase<R>>
-      BaseClass;
+
   TimerFuture(LoopCore *lc, uint64_t later, F &f)
-      : BaseClass(lc, later), _f(f) {}
+      : TimerFutureBaseType<R, threadSafe>(lc, later), _f(f) {}
 
   void reset(uint64_t later, F &f) {
-    BaseClass::reset(later);
+    TimerFutureBaseType<R, threadSafe>::reset(later);
     _f = f;
   }
 

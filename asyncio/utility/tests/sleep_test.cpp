@@ -2,17 +2,17 @@
 
 #include <string>
 
-#include "../asleep.hpp"
+#include "../sleep.hpp"
 
 using namespace std;
 
 USING_ASYNNCIO_NAMESPACE;
-namespace asleep_test {
-TEST_CASE("asleep", "[utility]") {
+namespace sleep_test {
+TEST_CASE("sleep", "[utility]") {
   EventLoop loop;
   string output;
   auto foo = [&](uint64_t ms, string word) -> coro<void> {
-    co_await asleep(&loop, ms);
+    co_await sleep(&loop, ms);
     output += word;
   };
   auto first = loop.createTask(foo(30, "A"));
@@ -22,4 +22,4 @@ TEST_CASE("asleep", "[utility]") {
   first->release();
   CHECK(output == "CBA");
 }
-} // namespace asleep_test
+} // namespace sleep_test

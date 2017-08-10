@@ -1,6 +1,6 @@
 add_library(utility 
   loop_awaitable.hpp
-  asleep.hpp asleep.cpp
+  sleep.hpp sleep.cpp
 )
 
 add_subdirectory (tests) 

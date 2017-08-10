@@ -14,7 +14,6 @@ public:
 
 private:
   EventLoop *_loop;
-  uint64_t _ms;
 };
 
 END_ASYNCIO_NAMESPACE;

@@ -51,9 +51,7 @@ protected: // implementing details ...
 
 template <class HB> class BasicHandleThreadSafe : public HB {
 public:
-  template <class... Args>
-  BasicHandleThreadSafe(Args &&... args) : HB(std::forward<Args>(args)...) {}
-
+  using HB::HB;
   virtual size_t doAddRef() final {
     std::lock_guard<std::mutex> lock(_mutex);
     return HB::doAddRef();

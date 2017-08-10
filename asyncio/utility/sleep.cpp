@@ -1,8 +1,8 @@
-#include "asleep.hpp"
+#include "sleep.hpp"
 
 BEGIN_ASYNCIO_NAMESPACE;
 
-void ASleep::run() {
+void Sleep::run() {
   loop()->callLater(_ms, [&] { this->resume(); })->release();
 }
 
