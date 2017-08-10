@@ -81,7 +81,7 @@ TEST_CASE("wait", "[wait]") {
           CHECK(*iter == fut0);
           CHECK(fut0->done());
           co_await++ iter;
-          CHECK_FALSE(iter != anyWaiter.end());
+          CHECK(iter == anyWaiter.end());
         };
       }
       SECTION("all waited in for") {

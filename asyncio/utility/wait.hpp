@@ -78,6 +78,9 @@ public:
     bool operator!=(const iterator &other) const {
       return _anyFuture != other._anyFuture;
     }
+    bool operator==(const iterator &other) const {
+      return _anyFuture == other._anyFuture;
+    }
     FutureBase *operator*() { return _fut; }
 
   protected:
