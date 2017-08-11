@@ -101,4 +101,83 @@ int main() {
 ### About Thread Safety
 Keep in mind that EventLoop and Coroutines are not thread safe, you can only call most of the mehtods of an EventLoop in the thread where you call the runUntilDone() methods. and schedule coroutines which will be _resumed_ by the same thread too. Sometimes you may need to submit some function call or coroutines from another thread, then need need to use ThreadSafe version of method.
 
-### Wait multiple coroutine 
+### Wait Multiple Coroutine 
+Sometimes we need to start two IO operation, and wait both of them to return. If we simply _co_await_ the first IO, then _co_await_ the second one, the latency of these two operations will be added. With the help of EventLoop, AsyncIO provides some simple functions/Class to wait schedule two IO simultaneously then wait all/any of them to finish.
+
+#### Wait All Coroutine
+```c++
+#include <asyncio/asyncio.hpp>
+#include <iostream>
+#include <string>
+
+using namespace std;
+using namespace asyncio;
+
+coro<int> addLater(EventLoop *loop, int a, int b, uint64_t ms = 0) {
+  co_await sleep(loop, ms);
+  cout << a << " + " << b << " = " << a + b << endl;
+  co_return a + b;
+}
+
+coro<void> adds(EventLoop *loop) {
+  auto &&add1 = addLater(loop, 1, 2, 10);
+  auto &&add2 = addLater(loop, 3, 4);
+  cout << "add (1, 2) and (3, 4) first:" << endl;
+  auto sums = co_await all(loop, add1, add2);
+  cout << "then add their sum:" << endl;
+  auto total = co_await addLater(loop, get<0>(sums), get<1>(sums));
+  cout << "Done! " << endl;
+  cout <<"We get the total: " <<  total << "!" << endl;
+}
+
+int main(int argc, char *argv[]) {
+  EventLoop loop;
+  auto task = loop.createTask(adds(&loop));
+  loop.runUntilDone(task);
+  task->release();
+}
+```
+#### Wait Any of Futures
+```c++
+#include <asyncio/asyncio.hpp>
+#include <iostream>
+#include <string>
+
+using namespace std;
+using namespace asyncio;
+
+coro<string> runner(EventLoop *loop, string name, uint64_t needTime) {
+  co_await sleep(loop, needTime);
+  co_return name;
+}
+
+coro<void> race(EventLoop *loop) {
+  vector<FutureBase*> futs{
+    loop->createTask(runner(loop, "Foo", 10)),
+    loop->createTask(runner(loop, "Goo", 5)),
+    loop->createTask(runner(loop, "Hoo", 1)),
+  };
+  
+  int idx = 0;
+  string winner;
+  cout << "Who runs fast?" << endl;
+  for co_await(auto && fut: FutureCoGen(futs)) {
+    idx ++;
+    string name = ((Future<string>*)fut)->get();
+    cout << idx << ": " << name << endl; 
+    if(idx == 1) {
+      winner = name;
+    }
+    fut->release();
+  }
+  cout << "The winner is -- " << winner << "!" << endl;
+}
+
+int main(int argc, char *argv[]) {
+  EventLoop loop;
+  auto task = loop.createTask(race(&loop));
+  loop.runUntilDone(task);
+  task->release();
+}
+```
+
