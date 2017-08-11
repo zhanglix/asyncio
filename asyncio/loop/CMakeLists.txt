@@ -1,4 +1,4 @@
-add_library(loop 
+add_library(loop OBJECT
   loop_core.hpp
   handle_base.hpp handle_base.cpp
   timer_handle.hpp timer_handle.cpp

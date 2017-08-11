@@ -1,4 +1,4 @@
-add_library(utility 
+add_library(utility OBJECT
   loop_awaitable.hpp
   sleep.hpp sleep.cpp
 )

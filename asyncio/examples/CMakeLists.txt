@@ -21,7 +21,7 @@ add_executable(
 
 
 target_link_libraries (add_on_loop  
-  loop 
+  asyncio 
   uv
   )
 
@@ -30,7 +30,6 @@ target_link_libraries (add_on_loop
   )
 
   target_link_libraries (sleep_sort  
-  loop 
-  utility
+  asyncio
   uv
   )

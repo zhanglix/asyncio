@@ -68,7 +68,7 @@ int main() {
   fut->release();  // should not use fut anymore1
   fut2->release(); // should not use fut2 anymore!
 }
-
+```
 
 ### Schedule Coroutines
 you can schedule Coroutines to run soon or later.
