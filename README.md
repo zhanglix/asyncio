@@ -5,7 +5,7 @@ AsyncIO is a C++ coroutine helper library based on llvm-5.0's (or above) corouti
 * [Couroutine](docs/coroutine.md) 
   Coroutine makes it much easier to write coroutine methods, generators and asynchronous generators. These part of AsyncIO is header only that means if this is all you need, you can just download the source code into your projects, then use it without build AsyncIO
 * [EventLoop](docs/event_loop.md)
-  EventLoop is a simple scheduler based on [libuv](http://libuv.org/), it helps you run multiple coroutines "simultaneously" within a thread.
+  EventLoop is a simple scheduler based on [libuv](http://libuv.org/), inspired by [EventLoop of Python3](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.AbstractEventLoop). it helps you run multiple coroutines "simultaneously" within a thread.
 
 ### How to Run Build AsyncIO
 
