@@ -1,6 +1,7 @@
 #pragma once
 
 #include "loop_awaitable.hpp"
+#include "../coro/coro.hpp"
 
 BEGIN_ASYNCIO_NAMESPACE;
 
@@ -13,6 +14,10 @@ private:
   uint64_t _ms;
 };
 
-using sleep = Sleep;
+template<class A=DefaultAllocator>
+coro<void, A> sleep(EventLoop *loop, uint64_t ms) {
+   co_await Sleep(loop, ms);
+   co_return;
+}
 
 END_ASYNCIO_NAMESPACE;
