@@ -3,9 +3,12 @@
 #include <type_traits>
 
 #include <tuple>
+#include <vector>
 
 #include "../coro/co_gen.hpp"
 #include "../coro/coro.hpp"
+#include "../coro/utility.hpp"
+#include "../loop/event_loop.hpp"
 
 BEGIN_ASYNCIO_NAMESPACE;
 
@@ -89,24 +92,12 @@ public:
     size_t _next;
   };
 
-  FutureCoGen(std::vector<FutureBase *> &futs)
-      : _next(0), _futs(futs), _awaitables(_futs.size()) {
-    for (auto &&fut : _futs) {
-      fut->setDoneCallback(
-          [&](FutureBase *h) { _awaitables[_next++].resume(h); });
-    }
-  }
-  ~FutureCoGen() {
-    for (auto &&fut : _futs) {
-      if (!fut->done()) {
-        fut->setDoneCallback([](FutureBase *) {});
-      }
-    }
-  }
+  FutureCoGen(std::vector<FutureBase *> &futs);
+  ~FutureCoGen();
 
-  bool hasWaitable(size_t next) { return next < _futs.size(); }
-  AWaitable<FutureBase *> &waitable(size_t pos) { return _awaitables[pos]; }
-  FutureBase *future(size_t pos) { return _futs[pos]; }
+  bool hasWaitable(size_t next);
+  AWaitable<FutureBase *> &waitable(size_t pos);
+  FutureBase *future(size_t pos);
   template <class A = DefaultAllocator> coro<iterator, A> begin() {
     auto iter = iterator(this);
     co_await++ iter;
