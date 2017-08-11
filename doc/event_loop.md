@@ -19,7 +19,7 @@ EventLoop loop(new UVLoopCore(&uvloop));
 auto task = loop.createTask(myCoroutine());
 loop.runUntilDone(task)
 auto result = task->get();
-task->release();
+task->release();
 ```
 
 ### Future\<SomeType> Class
