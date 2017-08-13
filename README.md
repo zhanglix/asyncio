@@ -20,6 +20,7 @@ cd $ASYNCIO_PATH && mkdir -p build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release .. #there are some option in Debug config which conflict with -fcoroutines-ts that will cause clang crash.
 make -j 10
 make test
+make install
 ```
 #### On Linux
 TO BE ADD
