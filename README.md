@@ -27,56 +27,47 @@ TO BE ADD
 ## Examples
 There are some examples in asyncio/examples directory. For more detail infomation about specific class, you can check the tests in asyncio/tests directory or just have a look at the code. 
 
-### adds.cpp
-Source Code: adds.cpp
+### sleep_sort.cpp
+Source Code: sleep_sort.cpp
 
 ```c++
 #include <asyncio/asyncio.hpp>
 #include <iostream>
-#include <string>
 
 using namespace std;
 using namespace asyncio;
 
-coro<int> addLater(EventLoop *loop, int a, int b, uint64_t ms = 0) {
-  co_await sleep(loop, ms);
-  cout << a << " + " << b << " = " << a + b << endl;
-  co_return a + b;
+coro<void> sleepCout(EventLoop *loop, uint64_t value) {
+  co_await sleep(loop, value);
+  cout << value << endl;
 }
 
-coro<void> adds(EventLoop *loop) {
-  auto &&add1 = addLater(loop, 1, 2, 10);
-  auto &&add2 = addLater(loop, 3, 4);
-  cout << "add (1, 2) and (3, 4) first:" << endl;
-  auto sums = co_await all(loop, add1, add2);
-  cout << "then add their sum:" << endl;
-  auto total = co_await addLater(loop, get<0>(sums), get<1>(sums));
-  cout << "Done! " << endl;
-  cout <<"We get the total: " <<  total << "!" << endl;
-}
-
-int main(int argc, char *argv[]) {
+int main() {
   EventLoop loop;
-  auto task = loop.createTask(adds(&loop));
-  loop.runUntilDone(task);
-  task->release();
+  cout << "Someone says 'sleep sort' is O(1)?" << endl;
+  uint64_t max = -1;
+  for (auto &&v : {5, 1, 9, 7, 3}) {
+    loop.createTask(sleepCout(&loop, v))->release();
+    max = max > v ? max : v;
+  }
+  loop.callLater(max + 20, [&] { loop.stop(); })->release();
+  loop.runForever();
+  cout << "... I think it makes sense! 🤣🤣🤣" << endl;
 }
-
-
 ```
 compile it 
 
 ```bash
-$ clang -I $ASYNCIO_HEADER_PATH -o adds -lc++ -std=c++14 -stdlib=libc++ -fcoroutines-ts -lasyncio -L $ASYNCIO_LIB_PATH -rpath $ASYNCIO_LIB_PATH adds.cpp
+$ clang -I $ASYNCIO_HEADER_PATH -o sleep_sort -lc++ -std=c++14 -stdlib=libc++ -fcoroutines-ts -lasyncio -L $ASYNCIO_LIB_PATH -rpath $ASYNCIO_LIB_PATH sleep_sort.cpp
  
-$ ./adds
-add (1, 2) and (3, 4) first:
-3 + 4 = 7
-1 + 2 = 3
-then add their sum:
-3 + 7 = 10
-Done! 
-We get the total: 10!
+$ ./sleep_sort
+Someone says 'sleep sort' is O(1)?
+1
+3
+5
+7
+9
+... I think it makes sense! 🤣🤣🤣
 
 ```
 
