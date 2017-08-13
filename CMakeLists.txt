@@ -22,6 +22,14 @@ configure_file (
   "${PROJECT_SOURCE_DIR}/asyncio/config.hpp.in"
   "${PROJECT_BINARY_DIR}/asyncio/config.hpp"
   )
+
+CONFIGURE_FILE(
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake.modules/cmake_uninstall.cmake.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/cmake.modules/cmake_uninstall.cmake"
+  IMMEDIATE @ONLY)
+ADD_CUSTOM_TARGET(uninstall
+  "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake.modules/cmake_uninstall.cmake")
+
 add_compile_options(
   -stdlib=libc++	
   -std=c++14 
