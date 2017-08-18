@@ -17,11 +17,13 @@ BEGIN_ASYNCIO_NAMESPACE;
 class EventLoop {
 public:
   EventLoop(LoopCore *lc = nullptr, bool own = true);
-  ~EventLoop();
+  virtual ~EventLoop();
 
-  void runUntilDone(FutureBase *future);
-  void runForever();
-  void stop();
+  virtual uint64_t time() { return _lc->time(); }
+
+  virtual void runUntilDone(FutureBase *future);
+  virtual void runForever();
+  virtual void stop();
 
   template <class F, class... Args> auto callSoon(F &&f, Args &&... args) {
     return callOnTimer<false, F, Args...>(0, std::forward<F>(f),
