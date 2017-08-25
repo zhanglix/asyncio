@@ -25,6 +25,13 @@ public:
   virtual void runUntilDone(FutureBase *future);
   virtual void runForever();
 
+  template <class CoroType> auto runUntilTaskDone(CoroType &&co) {
+    auto task = createTask(std::forward<CoroType>(co));
+    ReleaseGuard<std::remove_pointer_t<decltype(task)>> guard(task);
+    runUntilDone(guard);
+    return guard->get();
+  }
+
   virtual void stop();
 
   template <class F, class... Args> auto callSoon(F &&f, Args &&... args) {
