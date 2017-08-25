@@ -9,6 +9,7 @@
 
 #include "future.hpp"
 #include "loop_core.hpp"
+#include "release_guard.hpp"
 #include "task.hpp"
 #include "timer_future.hpp"
 
@@ -23,6 +24,7 @@ public:
 
   virtual void runUntilDone(FutureBase *future);
   virtual void runForever();
+
   virtual void stop();
 
   template <class F, class... Args> auto callSoon(F &&f, Args &&... args) {

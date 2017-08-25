@@ -81,6 +81,17 @@ TEST_CASE("eventloop release early", "[release]") {
   last->release();
 }
 
+TEST_CASE("eventloop runUntilTaskDone", "[examples]") {
+  EventLoop loop;
+  CHECK(loop.runUntilTaskDone([]() -> coro<int> { co_return 10; }()) == 10);
+  bool flag = false;
+  loop.runUntilTaskDone([&]() -> coro<void> {
+    flag = true;
+    co_return;
+  }());
+  CHECK(flag);
+}
+
 TEST_CASE("event loop done callback", "[callback]") {
   EventLoop loop;
   FutureBase *done = nullptr;
