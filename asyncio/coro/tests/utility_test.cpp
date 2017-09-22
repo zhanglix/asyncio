@@ -41,10 +41,10 @@ private:
 void callback(void *userData, int status) {
   auto awaitablePointer = (AWaitable<int> *)userData;
   if (status < 0) {
-    LOG_DEBUG("will raise error: {}", status);
+    ASYNCIO_DEBUG("will raise error: {}", status);
     awaitablePointer->raise(runtime_error("some error"));
   } else {
-    LOG_DEBUG("will resume: {}", status);
+    ASYNCIO_DEBUG("will resume: {}", status);
     awaitablePointer->resume(status);
   }
 }
@@ -75,7 +75,7 @@ TEST_CASE("AWaitable<int> test with service", "[awaitable]") {
 }
 
 TEST_CASE("AWaitable<int> throw", "[awaitable]") {
-  LOG_DEBUG("Waitable<int> throw test case started");
+  ASYNCIO_DEBUG("Waitable<int> throw test case started");
   SomeService service;
   coro<int> co(nullptr);
   SECTION("immediately") {
@@ -98,7 +98,7 @@ TEST_CASE("AWaitable<int> throw", "[awaitable]") {
   co_runner<int> cr(co);
   service.triggerCallback();
   REQUIRE_THROWS_AS(cr.get_future().get(), runtime_error);
-  LOG_DEBUG("AWaitable<int> throw test case finished!");
+  ASYNCIO_DEBUG("AWaitable<int> throw test case finished!");
 }
 
 TEST_CASE("AWaitable<void> unit", "[awaitable]") {

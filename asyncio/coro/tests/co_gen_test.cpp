@@ -17,11 +17,11 @@ namespace co_gen_test {
 
 static vector<AWaitable<int>> awaitables;
 coro<int> identity_no_suspend(int n) {
-  LOG_DEBUG("identity_no_suspend{}", n);
+  ASYNCIO_DEBUG("identity_no_suspend{}", n);
   co_return n;
 }
 coro<int> awaitable_suspended(int i) {
-  LOG_DEBUG("awaitable_suspended");
+  ASYNCIO_DEBUG("awaitable_suspended");
   co_return co_await awaitables[i];
 }
 
@@ -39,16 +39,16 @@ co_gen<int> range(int n, bool wait, int throwPos = -1) {
 }
 
 coro<void> co_check(int n, bool wait) {
-  LOG_DEBUG("begin co_check");
+  ASYNCIO_DEBUG("begin co_check");
   vector<int> expect;
   for (int i = 0; i < n; i++) {
     expect.push_back(i);
   }
   vector<int> actual;
-  LOG_DEBUG("before for co_await()");
+  ASYNCIO_DEBUG("before for co_await()");
   for
     co_await(auto &&v : range(n, wait)) {
-      LOG_DEBUG("co_check got {}", v);
+      ASYNCIO_DEBUG("co_check got {}", v);
       actual.push_back(v);
     }
   REQUIRE(expect == actual);
@@ -60,7 +60,7 @@ void do_check(int n, bool wait) {
   co_runner<void> cr(co_check(n, wait));
   if (wait) {
     for (int i = 0; i < n; i++) {
-      LOG_DEBUG("awaitable.resume({});", i);
+      ASYNCIO_DEBUG("awaitable.resume({});", i);
       awaitables[i].resume(i);
     }
   }
@@ -89,7 +89,7 @@ void do_check_exception(int pos, bool wait = false, int size = 3) {
   co_runner<void> cr(traverse(pos, wait, size));
   if (wait) {
     for (int i = 0; i < pos; i++) {
-      LOG_DEBUG("awaitable.resume({});", i);
+      ASYNCIO_DEBUG("awaitable.resume({});", i);
       awaitables[i].resume(i);
     }
   }

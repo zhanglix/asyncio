@@ -54,7 +54,7 @@ TEST_CASE("event_loop createTask delayed", "[examples]") {
     co_return a + b;
   };
   Future<int> *task = loop.createTask(foo(6, 2));
-  auto second = loop.callSoon([&] { LOG_DEBUG("do nothing"); });
+  auto second = loop.callSoon([&] { ASYNCIO_DEBUG("do nothing"); });
   loop.runUntilDone(second);
   CHECK_FALSE(task->done());
   auto third = loop.callSoon([&] { awaitable.resume(); });
@@ -151,13 +151,13 @@ TEST_CASE("eventloop timer", "[loop][trivial]") {
 
   SECTION("int") {
     auto fut = loop.callSoon([](int in) { return in; }, 3);
-    LOG_DEBUG("after callSoon()");
+    ASYNCIO_DEBUG("after callSoon()");
     CHECK_FALSE(fut->done());
     Verify(Method(spy, callSoon)).Once();
     SECTION("done") {
-      LOG_DEBUG("before runOneIteration()");
+      ASYNCIO_DEBUG("before runOneIteration()");
       loop.runUntilDone(fut);
-      LOG_DEBUG("after runOneIteration()");
+      ASYNCIO_DEBUG("after runOneIteration()");
 
       CHECK(fut->done());
       CHECK(fut->get() == 3);
@@ -169,9 +169,9 @@ TEST_CASE("eventloop timer", "[loop][trivial]") {
       CHECK_THROWS_AS(fut->get(), FutureCanceledError);
     }
 
-    LOG_DEBUG("before fut->release()");
+    ASYNCIO_DEBUG("before fut->release()");
     REQUIRE_NOTHROW(fut->release());
-    LOG_DEBUG("after fut->release()");
+    ASYNCIO_DEBUG("after fut->release()");
     Verify(Method(spy, recycleTimerHandle)).Once();
   }
 
@@ -210,18 +210,18 @@ TEST_CASE("eventloop timer", "[loop][trivial]") {
   }
 
   SECTION("callSoonThreadSafe") {
-    LOG_DEBUG("begin callSoonThreadSafe");
+    ASYNCIO_DEBUG("begin callSoonThreadSafe");
     Spy(Method(spy, callSoonThreadSafe));
     Future<int> *fut = loop.callSoonThreadSafe([](int in) { return in; }, 3);
     CHECK_FALSE(fut->done());
     Verify(Method(spy, callSoonThreadSafe)).Once();
 
-    LOG_DEBUG("before fut->release()");
+    ASYNCIO_DEBUG("before fut->release()");
     REQUIRE_NOTHROW(fut->release());
     Verify(Method(spy, recycleTimerHandle)).Exactly(0);
     lc->runOneIteration();
     Verify(Method(spy, recycleTimerHandle)).Once();
-    LOG_DEBUG("end callSoonThreadSafe");
+    ASYNCIO_DEBUG("end callSoonThreadSafe");
   }
 }
 

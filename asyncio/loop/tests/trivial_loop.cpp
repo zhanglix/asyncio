@@ -13,8 +13,8 @@ void TrivialLoop::runOneIteration() {
   _now += 1;
   for (auto &&h : _timers) {
     h->processEntry();
-    LOG_DEBUG("handle({})->refCount:({}) in runOneIteration.", (void *)h,
-              h->refCount());
+    ASYNCIO_DEBUG("handle({})->refCount:({}) in runOneIteration.", (void *)h,
+                  h->refCount());
     h->subRef();
   }
   _timers.clear();
@@ -32,10 +32,11 @@ size_t TrivialLoop::activeHandlesCount() { return _timers.size(); }
 uint64_t TrivialLoop::time() { return _now; }
 
 TimerHandle *TrivialLoop::callSoon(TimerCallback callback, void *data) {
-  LOG_DEBUG("call soon!");
+  ASYNCIO_DEBUG("call soon!");
   TrivialTimerHandle *handle = new TrivialTimerHandle(this, callback, data);
   handle->setupTimer();
-  LOG_DEBUG("handle({})->refCount:({})", (void *)handle, handle->refCount());
+  ASYNCIO_DEBUG("handle({})->refCount:({})", (void *)handle,
+                handle->refCount());
   return handle;
 }
 

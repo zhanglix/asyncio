@@ -46,7 +46,7 @@ public:
   };
 
   coro<iterator, AllocatorType> begin() const {
-    LOG_DEBUG("co_gen begin. coro this: {}, handle: {}", (void *)this,
+    ASYNCIO_DEBUG("co_gen begin. coro this: {}, handle: {}", (void *)this,
               _handle.address());
     auto iter = iterator(_handle);
     co_await++ iter;
@@ -58,31 +58,31 @@ public:
   operator bool() const { return bool(_handle); }
 
   co_gen(handle_type h) : _handle(h) {
-    LOG_DEBUG("Constructing co_gen. this: () handle: ()", (void *)this,
+    ASYNCIO_DEBUG("Constructing co_gen. this: () handle: ()", (void *)this,
               h.address());
   }
   co_gen(const co_gen &) = delete;
   co_gen(co_gen &&other) : _handle(other._handle) {
-    LOG_DEBUG("Move Constructing co_gen. this: (), handle: ()", (void *)this,
+    ASYNCIO_DEBUG("Move Constructing co_gen. this: (), handle: ()", (void *)this,
               _handle.address());
     other._handle = nullptr;
   }
   co_gen() : _handle(nullptr) {}
   void destroy_handle() {
     if (_handle) {
-      LOG_DEBUG("Destroying handle: {}", _handle.address());
+      ASYNCIO_DEBUG("Destroying handle: {}", _handle.address());
       _handle.destroy();
     }
     _handle = nullptr;
   }
   ~co_gen() {
-    LOG_DEBUG("Destructing co_gen. this: {}, handle: {}", (void *)this,
+    ASYNCIO_DEBUG("Destructing co_gen. this: {}, handle: {}", (void *)this,
               _handle.address());
     destroy_handle();
   }
 
   co_gen &operator=(co_gen &&other) {
-    LOG_DEBUG("Move assignment co_gen. this: {}, handle: {}}", (void *)this,
+    ASYNCIO_DEBUG("Move assignment co_gen. this: {}, handle: {}}", (void *)this,
               other._handle.address());
     destroy_handle();
     _handle = other._handle;

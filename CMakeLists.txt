@@ -31,26 +31,34 @@ ADD_CUSTOM_TARGET(uninstall
   "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake.modules/cmake_uninstall.cmake")
 
 add_compile_options(
-  -stdlib=libc++	
-  -std=c++14 
-  -fsanitize=address 
-  -fno-omit-frame-pointer 
+  -fPIC
+  -std=c++14   
+  # -fsanitize=address 
+  # -fno-omit-frame-pointer 
   -fcoroutines-ts
   -v)
 
+#SET(ASYNCIO_LINKER_FLAGS "-z notext -stdlib=libc++ -fsanitize=address -v -Wl -Werror")
+SET(ASYNCIO_LINKER_FLAGS "-stdlib=libc++ -lc++abi -v -Wl -Werror")
 #SET( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -v -Wl,-rpath,/usr/local/opt/llvm/lib" )
-SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -v -Wl -Werror" )
-SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address -v -Wl -Werror" )
+SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${ASYNCIO_LINKER_FLAGS}" )
+SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${ASYNCIO_LINKER_FLAGS}" )
 include_directories(
+  "/usr/local/include/c++/v1"
   "${PROJECT_BINARY_DIR}" 
   "${PROJECT_SOURCE_DIR}"
   "${PROJECT_SOURCE_DIR}/contrib/tests"  
   ${LLVM_INCLUDE_DIRS}
 )
 
+
+message(STATUS "CMAKE_EXE_LINKER_FLAGS:  ${CMAKE_EXE_LINKER_FLAGS}")
+message(STATUS "CMAKE_SHARED_LINKER_FLAGS: ${CMAKE_SHARED_LINKER_FLAGS}")
+
 link_directories(
 ${LLVM_LIBRARY_DIRS}
 )
+
 
 set (EXTRA_LIBS -lpthread)
 enable_testing(true)

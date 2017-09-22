@@ -12,6 +12,7 @@ add_executable(
 target_link_libraries (loop_test  
   asyncio 
   uv
+  pthread
   )
 
 ParseAndAddCatchTests(loop_test)

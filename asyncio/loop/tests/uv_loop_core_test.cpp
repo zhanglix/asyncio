@@ -25,56 +25,56 @@ TEST_CASE("uv_loop_core", "[loop]") {
   void *data = (void *)0xabcd;
   auto callback = [](TimerHandle *h) { h->setData(h); };
   SECTION("finished") {
-    LOG_DEBUG("begin finished!");
+    ASYNCIO_DEBUG("begin finished!");
     TimerHandle *handle;
     SECTION("simple") {
       SECTION("soon") {
-        LOG_DEBUG("begin simple.soon!");
+        ASYNCIO_DEBUG("begin simple.soon!");
         handle = lc->callSoon(callback, data);
       }
       SECTION("later") {
-        LOG_DEBUG("begin simple.later!");
+        ASYNCIO_DEBUG("begin simple.later!");
         handle = lc->callLater(10, callback, data);
       }
     }
     SECTION("ThreadSafe") {
-      LOG_DEBUG("begin ThreadSafe!");
+      ASYNCIO_DEBUG("begin ThreadSafe!");
       handle = lc->callSoonThreadSafe(callback, data);
       REQUIRE(dynamic_cast<UVASyncTimerHandle *>(handle));
     }
     CHECK(handle->data() == data);
-    LOG_DEBUG("before runOneIteration()");
+    ASYNCIO_DEBUG("before runOneIteration()");
     lc->runOneIteration();
     CHECK(handle->data() == handle);
     CHECK(handle->done());
     CHECK_FALSE(handle->cancel());
-    LOG_DEBUG("before close() exepct throw");
+    ASYNCIO_DEBUG("before close() exepct throw");
     REQUIRE_THROWS_AS(lc->close(), LoopBusyError);
     CHECK(lc->activeHandlesCount() == 1);
     CHECK(handle->subRef() == 0);
     CHECK(lc->activeHandlesCount() == 0);
-    LOG_DEBUG("end finished!");
+    ASYNCIO_DEBUG("end finished!");
   }
   SECTION("canceled") {
-    LOG_DEBUG("before canceled.");
+    ASYNCIO_DEBUG("before canceled.");
     TimerHandle *handle;
     SECTION("simple") {
       SECTION("soon") {
-        LOG_DEBUG("before simple.soon.");
+        ASYNCIO_DEBUG("before simple.soon.");
         handle = lc->callSoon(callback, data);
       }
       SECTION("later") {
-        LOG_DEBUG("before simple.later.");
+        ASYNCIO_DEBUG("before simple.later.");
         handle = lc->callLater(10, callback, data);
       }
     }
     SECTION("ThreadSafe") {
-      LOG_DEBUG("before ThreadSafe.");
+      ASYNCIO_DEBUG("before ThreadSafe.");
       handle = lc->callSoonThreadSafe(callback, data);
       REQUIRE(dynamic_cast<UVASyncTimerHandle *>(handle));
     }
     CHECK(handle->cancel());
-    LOG_DEBUG("before runOneIteration()");
+    ASYNCIO_DEBUG("before runOneIteration()");
     CHECK(handle->done());
 
     // tricks to prevent from hanging to wait async_send
@@ -82,12 +82,12 @@ TEST_CASE("uv_loop_core", "[loop]") {
 
     lc->runOneIteration();
     CHECK(handle->data() == data);
-    LOG_DEBUG("before close() exepct throw");
+    ASYNCIO_DEBUG("before close() exepct throw");
     REQUIRE_THROWS_AS(lc->close(), LoopBusyError);
     CHECK(lc->activeHandlesCount() == 1);
     REQUIRE_NOTHROW(handle->subRef());
     CHECK(lc->activeHandlesCount() == 0);
-    LOG_DEBUG("end canceled.");
+    ASYNCIO_DEBUG("end canceled.");
   }
 
   SECTION("callLater canceled by callSoonThreadSafe") {
@@ -108,7 +108,7 @@ TEST_CASE("uv_loop_core", "[loop]") {
     handle->subRef();
     t.join();
   }
-  LOG_DEBUG("before close() ending");
+  ASYNCIO_DEBUG("before close() ending");
 
   REQUIRE_NOTHROW(lc->close());
 }

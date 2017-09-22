@@ -8,7 +8,7 @@ add_executable(
   co_gen_test.cpp
   allocator_test.cpp
   )
-#target_link_libraries (asyncio_test  asyncio)
+target_link_libraries (coro_test  asyncio pthread)
 
 add_executable(
   co_drafts  co_drafts.cpp

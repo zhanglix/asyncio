@@ -17,14 +17,14 @@ public:
 
   using suspend_always = std::experimental::suspend_always;
   suspend_always initial_suspend() {
-    LOG_DEBUG("create initial_suspend(). promise this: {}", (void *)this);
+    ASYNCIO_DEBUG("create initial_suspend(). promise this: {}", (void *)this);
     return suspend_always{};
   }
   inline done_suspend final_suspend();
   void unhandled_exception() { exception_caught = std::current_exception(); }
 
   void set_caller_handle(coroutine_handle &h) {
-    LOG_DEBUG("set_caller_handle. promise this: {} handle: {}", (void *)this,
+    ASYNCIO_DEBUG("set_caller_handle. promise this: {} handle: {}", (void *)this,
               h.address());
     caller_handle = h;
   }
@@ -42,18 +42,18 @@ public:
 
   void resume_caller() {
     if (caller_handle) {
-      LOG_DEBUG("resume caller. promise this: {}, caller_handle: {}",
+      ASYNCIO_DEBUG("resume caller. promise this: {}, caller_handle: {}",
                 (void *)this, caller_handle.address());
       caller_handle.resume();
     }
   }
 
   void set_done() {
-    LOG_DEBUG("promise done. this: {}", (void *)this);
+    ASYNCIO_DEBUG("promise done. this: {}", (void *)this);
     done = true;
   }
 
-  ~promise_base() { LOG_DEBUG("Destructing promise_base: {}", (void *)this); }
+  ~promise_base() { ASYNCIO_DEBUG("Destructing promise_base: {}", (void *)this); }
 
 protected:
   coroutine_handle caller_handle;
@@ -66,12 +66,12 @@ public:
   void return_value(ReturnType &&value) {
     _return_value = std::move(value);
     this->set_done();
-    LOG_DEBUG("return_value(&&). promise this: {}", (void *)this);
+    ASYNCIO_DEBUG("return_value(&&). promise this: {}", (void *)this);
   }
   void return_value(ReturnType &value) {
     _return_value = value;
     this->set_done();
-    LOG_DEBUG("return_value(&). promise this: {}", (void *)this);
+    ASYNCIO_DEBUG("return_value(&). promise this: {}", (void *)this);
   }
   ReturnType get_return_value() {
     this->check_exception();
@@ -84,7 +84,7 @@ template <> class promise<void> : public promise_base {
 public:
   void return_void() {
     this->set_done();
-    LOG_DEBUG("return_void(). promise this: {}", (void *)this);
+    ASYNCIO_DEBUG("return_void(). promise this: {}", (void *)this);
   }
   void get_return_value() { this->check_exception(); }
 };
@@ -94,9 +94,9 @@ public:
   using suspend_never = std::experimental::suspend_never;
   struct yield_suspend : public suspend_always {};
   yield_promise() : _yielded(false) {
-    LOG_DEBUG("Constructing yield_promise: {}", (void *)this);
+    ASYNCIO_DEBUG("Constructing yield_promise: {}", (void *)this);
   }
-  ~yield_promise() { LOG_DEBUG("Destructing yield_promise: {}", (void *)this); }
+  ~yield_promise() { ASYNCIO_DEBUG("Destructing yield_promise: {}", (void *)this); }
 
   auto yield_value(YiledType &&value) {
     _yielded = true;
@@ -141,7 +141,7 @@ public:
   }
   auto operator*() const { return std::move(_value); }
   bool next() {
-    LOG_DEBUG("next. this: {}, handle: {}", (void *)this, _handle.address());
+    ASYNCIO_DEBUG("next. this: {}, handle: {}", (void *)this, _handle.address());
     if (_handle) {
       PromiseType &promise = _handle.promise();
       _handle.resume(); // assert there is no co_await in co_gen<> coroutines.
@@ -163,7 +163,7 @@ protected:
 class done_suspend {
 public:
   done_suspend(promise_base *p) : promise(p) {
-    LOG_DEBUG("constructing done_suspend. this: {}, promise: {}", (void *)this,
+    ASYNCIO_DEBUG("constructing done_suspend. this: {}, promise: {}", (void *)this,
               (void *)p);
   }
   bool await_ready() const noexcept { return false; }
@@ -175,19 +175,19 @@ public:
 
 // imlementations following ...
 inline done_suspend promise_base::final_suspend() {
-  LOG_DEBUG("create final_suspend(). promise this: {}", (void *)this);
+  ASYNCIO_DEBUG("create final_suspend(). promise this: {}", (void *)this);
   return done_suspend(this);
 }
 
 inline void
 done_suspend::await_suspend(std::experimental::coroutine_handle<>) const
     noexcept {
-  LOG_DEBUG("Done! will resume_caller()."
+  ASYNCIO_DEBUG("Done! will resume_caller()."
             "this: {}, promise: {}",
             (void *)this, (void *)promise);
   promise->resume_caller();
   // this line may trigger access invalid address
-  //  LOG_DEBUG("caller resumed. this: {}", (void*)this);
+  //  ASYNCIO_DEBUG("caller resumed. this: {}", (void*)this);
 }
 
 END_ASYNCIO_NAMESPACE;

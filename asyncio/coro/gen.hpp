@@ -54,31 +54,31 @@ public:
   operator bool() const { return bool(_handle); }
 
   gen(handle_type h) : _handle(h) {
-    LOG_DEBUG("Constructing gen. this: 0x{:x} handle: 0x{:x}", (long)this,
+    ASYNCIO_DEBUG("Constructing gen. this: 0x{:x} handle: 0x{:x}", (long)this,
               (long)h.address());
   }
   gen(const gen &) = delete;
   gen(gen &&other) : _handle(other._handle) {
-    LOG_DEBUG("Move Constructing gen. this: 0x{:x}, handle: 0x{:x}", (long)this,
+    ASYNCIO_DEBUG("Move Constructing gen. this: 0x{:x}, handle: 0x{:x}", (long)this,
               (long)_handle.address());
     other._handle = std::experimental::coroutine_handle<promise_type>();
   }
   gen() : _handle(nullptr) {}
   void destroy_handle() {
     if (_handle) {
-      LOG_DEBUG("Destroying handle: 0x{:x}", (long)_handle.address());
+      ASYNCIO_DEBUG("Destroying handle: 0x{:x}", (long)_handle.address());
       _handle.destroy();
     }
     _handle = nullptr;
   }
   ~gen() {
-    LOG_DEBUG("Destructing gen. this: 0x{:x}, handle: 0x{:x}", (long)this,
+    ASYNCIO_DEBUG("Destructing gen. this: 0x{:x}, handle: 0x{:x}", (long)this,
               (long)_handle.address());
     destroy_handle();
   }
 
   gen &operator=(gen &&other) {
-    LOG_DEBUG("Move assignment gen. this: 0x{:x}, handle: 0x{:x}", (long)this,
+    ASYNCIO_DEBUG("Move assignment gen. this: 0x{:x}, handle: 0x{:x}", (long)this,
               (long)other._handle.address());
     destroy_handle();
     _handle = other._handle;

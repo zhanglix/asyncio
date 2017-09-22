@@ -15,18 +15,18 @@ struct TestEventLogger : TestEventListenerBase {
 
   // Test cases starting and ending
   void testCaseStarting(TestCaseInfo const &testInfo) {
-    LOG_DEBUG("Case start: {}", testInfo.name);
+    ASYNCIO_DEBUG("Case start: {}", testInfo.name);
   }
   void testCaseEnded(TestCaseStats const &testCaseStats) {
-    LOG_DEBUG("Case ended: {}", testCaseStats.testInfo.name);
+    ASYNCIO_DEBUG("Case ended: {}", testCaseStats.testInfo.name);
   }
 
   // Sections starting and ending
   void sectionStarting(SectionInfo const &sectionInfo) {
-    LOG_DEBUG("Section start: {}", sectionInfo.name);
+    ASYNCIO_DEBUG("Section start: {}", sectionInfo.name);
   }
   void sectionEnded(SectionStats const &sectionStats) {
-    LOG_DEBUG("Section ended: {}", sectionStats.sectionInfo.name);
+    ASYNCIO_DEBUG("Section ended: {}", sectionStats.sectionInfo.name);
   }
 
   // // Assertions before/ after

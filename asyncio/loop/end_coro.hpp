@@ -17,7 +17,7 @@ public:
   public:
     EndSuspend(std::function<void()> &f) : _f(f) {}
     void await_suspend(std::experimental::coroutine_handle<>) const noexcept {
-      LOG_DEBUG("EndSuspend::await_suspend ");
+      ASYNCIO_DEBUG("EndSuspend::await_suspend ");
       _f();
     }
 
@@ -40,7 +40,7 @@ public:
     void return_value(std::function<void()> &&f) { return_value(f); }
     void return_value(std::function<void()> &f) { _f = f; }
     void unhandled_exception() {
-      LOG_ERROR("Should catch all exceptions in EndCoro!");
+      ASYNCIO_ERROR("Should catch all exceptions in EndCoro!");
     }
 
   private:
@@ -50,7 +50,7 @@ public:
   operator bool() const { return bool(_handle); }
 
   void run() {
-    LOG_DEBUG("EndCoro::run. this: {}, handle: {}", (void *)this,
+    ASYNCIO_DEBUG("EndCoro::run. this: {}, handle: {}", (void *)this,
               _handle.address());
     if (_handle) {
       _handle.resume();
@@ -61,31 +61,31 @@ public:
 
   void destroy_handle() {
     if (_handle) {
-      LOG_DEBUG("Destroying handle: {}", _handle.address());
+      ASYNCIO_DEBUG("Destroying handle: {}", _handle.address());
       _handle.destroy();
     }
     _handle = nullptr;
   }
 
   EndCoro(std::experimental::coroutine_handle<promise_type> h) : _handle(h) {
-    LOG_DEBUG("Constructing EndCoro this: {} handle: {}", (void *)this,
+    ASYNCIO_DEBUG("Constructing EndCoro this: {} handle: {}", (void *)this,
               h.address());
   }
   EndCoro(const EndCoro &) = delete;
   EndCoro(EndCoro &&other) : _handle(other._handle) {
-    LOG_DEBUG("Move Constructing EndCoro this: {}, handle: {}", (void *)this,
+    ASYNCIO_DEBUG("Move Constructing EndCoro this: {}, handle: {}", (void *)this,
               _handle.address());
     other._handle = std::experimental::coroutine_handle<promise_type>();
   }
   EndCoro() {}
   ~EndCoro() {
-    LOG_DEBUG("Destructing EndCoro this: {}, handle: {}", (void *)this,
+    ASYNCIO_DEBUG("Destructing EndCoro this: {}, handle: {}", (void *)this,
               _handle.address());
     destroy_handle();
   }
 
   EndCoro &operator=(EndCoro &&other) {
-    LOG_DEBUG("Move assignment EndCoro this: {}, handle: {}", (void *)this,
+    ASYNCIO_DEBUG("Move assignment EndCoro this: {}, handle: {}", (void *)this,
               other._handle.address());
     destroy_handle();
     _handle = other._handle;

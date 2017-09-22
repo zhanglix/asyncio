@@ -27,7 +27,7 @@ struct Arena {
     void *ret = (void *)(p + 1);
     try {
       addressAllocated.insert(ret);
-      LOG_DEBUG("memory:{}, data:{}, this:{}, p[0]:{}", memory, ret,
+      ASYNCIO_DEBUG("memory:{}, data:{}, this:{}, p[0]:{}", memory, ret,
                 (void *)this, p[0]);
     } catch (...) {
     }
@@ -54,7 +54,7 @@ struct Arena {
     void *memory = memoryAddress(dataAddress);
     ::free(memory);
     addressAllocated.erase(dataAddress);
-    LOG_DEBUG("memory:{}, date:{}, this:{}", memory, dataAddress, (void *)this);
+    ASYNCIO_DEBUG("memory:{}, date:{}, this:{}", memory, dataAddress, (void *)this);
   }
   static void deallocate(void *p) noexcept {
     Arena *arena = getArena(p);
@@ -72,22 +72,22 @@ TEST_CASE("Arena allocator", "[allcoator]") {
 }
 
 struct Allocator {
-  Allocator() { LOG_DEBUG("Constructing Allocator:{}", (void *)this); }
+  Allocator() { ASYNCIO_DEBUG("Constructing Allocator:{}", (void *)this); }
   template <typename... Args>
   void *operator new(size_t size, Arena &arena, Args const &...) noexcept {
     void *p = arena.allocate(size);
-    LOG_DEBUG("Allocated memory:{}", p);
+    ASYNCIO_DEBUG("Allocated memory:{}", p);
     return p;
   }
 
   void *operator new(size_t size) noexcept {
     void *p = Arena::getDefaultArena().allocate(size);
-    LOG_DEBUG("Allocated memory :{}", p);
+    ASYNCIO_DEBUG("Allocated memory :{}", p);
     return p;
   }
 
   void operator delete(void *p, size_t size) noexcept {
-    LOG_DEBUG("operator delete memory:{}", p);
+    ASYNCIO_DEBUG("operator delete memory:{}", p);
     Arena::deallocate(p);
   }
 };

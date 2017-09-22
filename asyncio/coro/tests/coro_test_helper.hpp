@@ -7,23 +7,23 @@
 struct leak_base {
   leak_base(std::string name = "leak") : name(name) {}
   bool await_ready() const noexcept {
-    LOG_DEBUG("leak({}) will never ready");
+    ASYNCIO_DEBUG("leak({}) will never ready", this->name);
     return false;
   }
   void await_suspend(std::experimental::coroutine_handle<> h) noexcept {
     this->handle = h;
     this->address = (long)h.address();
-    LOG_DEBUG("leak({}) will suspend handle: 0x{:x} ...", this->name,
-              this->address);
+    ASYNCIO_DEBUG("leak({}) will suspend handle: 0x{:x} ...", this->name,
+                  this->address);
   }
   void resume_caller() {
-    LOG_DEBUG("leak({}) resuming handle: 0x{:x} ...", this->name,
-              this->address);
+    ASYNCIO_DEBUG("leak({}) resuming handle: 0x{:x} ...", this->name,
+                  this->address);
     if (this->handle) {
       this->handle.resume();
     }
-    LOG_DEBUG("leak({}) resuming handle: 0x{:x} DONE!", this->name,
-              this->address);
+    ASYNCIO_DEBUG("leak({}) resuming handle: 0x{:x} DONE!", this->name,
+                  this->address);
   }
   std::experimental::coroutine_handle<> handle;
   long address;
