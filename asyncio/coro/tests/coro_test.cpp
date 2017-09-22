@@ -33,7 +33,6 @@ TEST_CASE("coro_direct_return", "[no_suspening][foo]") {
   }
   SECTION("decomposed") {
     CHECK_FALSE(co.await_ready());
-    CHECK_FALSE(co.await_resume() == 10);
     CHECK_FALSE(co.await_suspend(nullptr));
     CHECK(co.await_resume() == 10);
   }
