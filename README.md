@@ -7,23 +7,34 @@ AsyncIO is a C++ coroutine helper library based on llvm-5.0's (or above) corouti
 * [EventLoop](docs/event_loop.md)
   EventLoop is a simple scheduler based on [libuv](http://libuv.org/), inspired by [EventLoop of Python3](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.AbstractEventLoop). it helps you run multiple coroutines "simultaneously" within a thread.
 
-### How to Run Build AsyncIO
+### How to Install
 
-#### On MacOS X
-Make sure you have installed llvm 5.0 or above, libc++ and cmake. the simplest way to install it is use brew
+#### install dependency
+Make sure you have installed llvm 5.0 or above, libc++, libc++abi, libuv and cmake. 
+
+##### On MacOS X 
 ```bash
 brew tap homebrew/versions
 brew install --HEAD llvm #this will install libc++ by default
 brew install cmake
+brew install 
+```
+##### On Ubuntu
+```bash
+sudo apt-get install libuv cmake
+# install llvm-5.0 libc++ libc++abi to /usr/local
+# download from here http://releases.llvm.org/download.html#5.0.0
+```
 
+#### Build and Install
+
+```bash
 cd $ASYNCIO_PATH && mkdir -p build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release .. #there are some option in Debug config which conflict with -fcoroutines-ts that will cause clang crash.
+cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j 10
 make test
 make install
 ```
-#### On Linux
-TO BE ADD
 
 ## Examples
 There are some examples in asyncio/examples directory. For more detail infomation about specific class, you can check the tests in asyncio/tests directory or just have a look at the code. 
