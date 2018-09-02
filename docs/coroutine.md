@@ -1,5 +1,5 @@
 ## What are Coroutines?
-Coroutines are of a special kind of _Functions_ whose execution can be 'paused' at some specific positions and be resumed at the paused position later. With Coroutines asynchronous codes can be written like synchronous codes, and has much lower overhead than multithreading synchronous implementation. 
+Coroutines are of a special kind of _Functions_ whose execution can be 'paused' at some specific positions and be resumed at the paused position later. With Coroutines asynchronous codes can be written like synchronous codes, and has much lower overhead than multithreading synchronous implementation.
 
 A typical asynchronous event-driven logic which based on callback mechanism usually looks like this:
 
@@ -51,8 +51,8 @@ coro<void> handleSearch(Request &request) {
 
 ## HOWTOs
 
-Now, AsyncIO provides three kinds of coroutine convinient classes to write coroutines. 
-* coro\<SomeType> 
+Now, AsyncIO provides three kinds of coroutine convinient classes to write coroutines.
+* coro\<SomeType>
 * gen\<SomeType>
 * co_gen\<SomeType>
 
@@ -63,8 +63,8 @@ Define a method/function whose return type is coro\<SomeType>, then you can use 
 ```c++
 coro<float> pi() { co_return 3.14;}
 
-coro<float> circleArea(float r) { 
-  int p = co_await pi(); 
+coro<float> circleArea(float r) {
+  int p = co_await pi();
   co_return p * r * r;
 }
 ```
@@ -74,7 +74,7 @@ Make use of AWaitable\<SomeType> helper class to wrap an callback based service 
 ```c++
 coro<string> query(string request, Service &service) {
   AWaitable<string> awaitable;
-  service.query(request, &awaitable, 
+  service.query(request, &awaitable,
                 [](string response, int error, void *userdata){
                   auto aw = (AWaitable *)userdata;
                   if (error == 0) {
@@ -136,7 +136,7 @@ coro<void> asyncTraversal(int n) {
 ```
 
 ### How to run a coro\<Sometype> in normal function context
-#### using EventLoop::createTask() recommended way 
+#### using EventLoop::createTask() recommended way
 
 ```c++
 extern coro<void> asyncTraversal; //defined above
@@ -166,13 +166,13 @@ int main(int argc, char* argv[]) {
 ```
 
 ### How to Customize Memory Allocation
-You can think of a coroutine just as a normal function with most of its local variables stored in a state object which should be allocated in heap. For each instance (call) of coroutine, the compiler will generate codes to allocate memory for that instance before it is created, and codes to recycle memory of after its destruction. The default method for allocating/recycling is the standard *operator new()* and *operator delete* methods. 
+You can think of a coroutine just as a normal function with most of its local variables stored in a state object which should be allocated in heap. For each instance (call) of coroutine, the compiler will generate codes to allocate memory for that instance before it is created, and codes to recycle memory of after its destruction. The default method for allocating/recycling is the standard *operator new()* and *operator delete* methods.
 
 For some performance critical portion of the code, the standard approach to allocate/recycle state object maybe unacceptable. There are two ways you can do to improve it.
 
-First, you can use a better malloc implementation, such as tcmalloc, or Lockless Memory Allocator. 
+First, you can use a better malloc implementation, such as tcmalloc, or Lockless Memory Allocator.
 
-Second, you can provide you own allocator for each coroutine method through the second template paramenter of class coro<>, gen<>, co_gen<>. For example:
+Second, you can provide your own allocator for each coroutine method through the second template paramenter of class coro<>, gen<>, co_gen<>. For example:
 ```c++
 class MyAllocator{
   void *operator new(size_t size) noexcept {
@@ -188,7 +188,7 @@ coro<int, MyAllocator> identity(int x) {co_return x;}
 
 ```
 
-for more details, see [allocator_test.cpp](asyncio/tests/allocator_test.cpp)
+for more details, see [allocator_test.cpp](asyncio/coro/tests/allocator_test.cpp)
 
 
 

@@ -11,7 +11,7 @@ using namespace asyncio;
 coro<void> my_async_sleep(milliseconds ms) {
   AWaitable<void> awaitable;
   thread t([&] {
-    // coro<> is not thread safe, for producetion code
+    // coro<> is not thread safe, for production code
     // it is recommended to base coro<> on some single threading
     // callback library such as libuv.
     cout << "sleep ..." << endl;
