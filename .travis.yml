@@ -10,11 +10,6 @@ matrix:
             - george-edison55-precise-backports
           packages:
             - clang-5.0
-            - cmake-data
-            - cmake
-            - libuv-dev
-            - libc++
-            - libc++abi-dev
       env:
         - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
 
