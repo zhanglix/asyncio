@@ -12,7 +12,7 @@ matrix:
             - clang-5.0
             - cmake-data
             - cmake
-            - libuv1-dev
+            - libuv-dev
             - libc++
             - libc++abi-dev
       env:
