@@ -10,6 +10,7 @@ matrix:
           packages:
             - clang-5.0
             - libuv-dev
+            - libc++
       env:
         - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
 
