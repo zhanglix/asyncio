@@ -1,4 +1,4 @@
-## What is AsyncIO?
+# What is AsyncIO
 
 AsyncIO is a C++ coroutine helper library based on llvm-5.0's (or above) coroutine feature. [AsycnIO v0.2](https://github.com/zhanglix/asyncio/tree/v_0_2) has two components:
 
@@ -7,32 +7,36 @@ AsyncIO is a C++ coroutine helper library based on llvm-5.0's (or above) corouti
 * [EventLoop](docs/event_loop.md)
   EventLoop is a simple scheduler based on [libuv](http://libuv.org/), inspired by [EventLoop of Python3](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.AbstractEventLoop). it helps you run multiple coroutines "simultaneously" within a thread.
 
-### Build Status
+## Build Status
 
 | Stage |OSX |
 |:--:|:--:|
 |Unit Test|[![Build Status](https://travis-ci.com/zhanglix/asyncio.svg?branch=master)](https://travis-ci.com/zhanglix/asyncio)||
 
-### How to Install
+## How to Install
 
-#### install dependency
+### install dependency
+
 Make sure you have installed llvm 5.0 or above, libc++, libc++abi, libuv and cmake.
 
-##### On MacOS X
+#### On MacOS X
+
 ```bash
 brew tap homebrew/versions
 brew install --HEAD llvm #this will install libc++ by default
 brew install cmake
 brew install
 ```
-##### On Ubuntu
+
+#### On Ubuntu
+
 ```bash
 sudo apt-get install libuv cmake
 # install llvm-5.0 libc++ libc++abi to /usr/local
 # download from here http://releases.llvm.org/download.html#5.0.0
 ```
 
-#### Build and Install
+### Build and Install
 
 ```bash
 cd $ASYNCIO_PATH && mkdir -p build && cd build
@@ -43,9 +47,11 @@ make install
 ```
 
 ## Examples
+
 There are some examples in asyncio/examples directory. For more detail infomation about specific class, you can check the tests in asyncio/tests directory or just have a look at the code.
 
 ### sleep_sort.cpp
+
 Source Code: sleep_sort.cpp
 
 ```c++
@@ -73,6 +79,7 @@ int main() {
   cout << "... I think it makes sense! 🤣🤣🤣" << endl;
 }
 ```
+
 compile it
 
 ```bash
@@ -88,9 +95,3 @@ Someone says 'sleep sort' is O(1)?
 ... I think it makes sense! 🤣🤣🤣
 
 ```
-
-
-
-
-
-
