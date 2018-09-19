@@ -44,11 +44,9 @@ SET(ASYNCIO_LINKER_FLAGS "-stdlib=libc++ -lc++abi -v -Wl -Werror")
 SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${ASYNCIO_LINKER_FLAGS} -Wl,-rpath,${PROJECT_BINARY_DIR}/asyncio" )
 SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${ASYNCIO_LINKER_FLAGS} -Wl,-rpath,${PROJECT_BINARY_DIR}/asyncio" )
 include_directories(
-  "/usr/local/include/c++/v1"
   "${PROJECT_BINARY_DIR}"
   "${PROJECT_SOURCE_DIR}"
   "${PROJECT_SOURCE_DIR}/contrib/tests"
-  ${LLVM_INCLUDE_DIRS}
 )
 
 
