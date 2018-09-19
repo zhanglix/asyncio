@@ -2,6 +2,7 @@
 
 #ifdef ENABLE_ASYNCIO_LOG
 #include "common.hpp"
+#include <spdlog/sinks/stdout_sinks.h>
 #include <spdlog/spdlog.h>
 BEGIN_ASYNCIO_NAMESPACE
 static auto _async_io_logger_ = spdlog::get("asyncio")
