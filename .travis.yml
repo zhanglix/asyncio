@@ -17,14 +17,8 @@ matrix:
     #     - eval "${MATRIX_EVAL}"
 
     - os: osx
-      osx_image: xcode10
       before_install:
         - brew update && brew bundle
-
-
-
-
-
 script:
   - mkdir -p build && cd build
   - cmake -DCMAKE_BUILD_TYPE=Release ..
