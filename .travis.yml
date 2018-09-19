@@ -2,23 +2,28 @@ language: cpp
 
 matrix:
   include:
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - llvm-toolchain-trusty-5.0
-          packages:
-            - clang-5.0
-            - libuv-dev
-            - libc++
-      env:
-        - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
+    # - os: linux
+    #   addons:
+    #     apt:
+    #       sources:
+    #         - llvm-toolchain-trusty-5.0
+    #       packages:
+    #         - clang-5.0
+    #         - libuv-dev
+    #         - libc++
+    #   env:
+    #     - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
+    #   before_install:
+    #     - eval "${MATRIX_EVAL}"
+
     - os: osx
       osx_image: xcode10
+      before_install:
+        - brew update && brew bundle
 
 
-before_install:
-    - eval "${MATRIX_EVAL}"
+
+
 
 script:
   - mkdir -p build && cd build

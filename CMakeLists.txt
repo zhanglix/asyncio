@@ -41,8 +41,8 @@ add_compile_options(
 #SET(ASYNCIO_LINKER_FLAGS "-z notext -stdlib=libc++ -fsanitize=address -v -Wl -Werror")
 SET(ASYNCIO_LINKER_FLAGS "-stdlib=libc++ -lc++abi -v -Wl -Werror")
 #SET( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -v -Wl,-rpath,/usr/local/opt/llvm/lib" )
-SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${ASYNCIO_LINKER_FLAGS}" )
-SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${ASYNCIO_LINKER_FLAGS}" )
+SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${ASYNCIO_LINKER_FLAGS} -Wl,-rpath,${PROJECT_BINARY_DIR}/asyncio" )
+SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${ASYNCIO_LINKER_FLAGS} -Wl,-rpath,${PROJECT_BINARY_DIR}/asyncio" )
 include_directories(
   "/usr/local/include/c++/v1"
   "${PROJECT_BINARY_DIR}"
