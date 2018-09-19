@@ -13,6 +13,8 @@ matrix:
             - libc++
       env:
         - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
+    - os: osx
+      osx_image: xcode10
 
 
 before_install:
