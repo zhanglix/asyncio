@@ -1,1 +1,2 @@
 brew 'libuv'
+brew 'spdlog@0.13'
