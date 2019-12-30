@@ -1,5 +1,10 @@
 language: cpp
 
+addons:
+  homebrew:
+    update: true
+    brewfile: true
+
 matrix:
   include:
     # - os: linux
@@ -17,8 +22,6 @@ matrix:
     #     - eval "${MATRIX_EVAL}"
 
     - os: osx
-      before_install:
-        - brew update && brew bundle
 script:
   - mkdir -p build && cd build
   - cmake -DCMAKE_BUILD_TYPE=Release ..
